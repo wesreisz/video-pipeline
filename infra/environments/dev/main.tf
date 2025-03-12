@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket         = "video-pipeline-terraform-state-dev"
+    bucket         = "video-pipeline-terraform-state"
     key            = "dev/terraform.tfstate"
     region         = "us-east-1"
     dynamodb_table = "video-pipeline-terraform-locks-dev"
