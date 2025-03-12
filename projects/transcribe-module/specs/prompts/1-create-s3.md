@@ -1,0 +1,1 @@
+Using terraform and the terraform rules and project structure attached to the prompt, create a terraform script to create an s3 bucket. Please create a single script for the dev environment that uses the s3 module stored under modules. We will use the same script to add other modules later. 
