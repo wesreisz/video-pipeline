@@ -1,0 +1,34 @@
+---
+description: Video Pipeline Project Structure 
+globs: *  
+alwaysApply: true
+---
+# Video Pipeline Project Structure
+
+This project is organized as follows:
+
+## Root Directory Structure
+
+- `infra/`: Infrastructure as code
+  - `modules/`: Reusable infrastructure modules
+  - `environments/`: Environment-specific configurations
+
+- `projects/`: Individual service implementations
+  - `transcribe-module/`: Service for transcribing audio files
+
+- `libs/`: Shared libraries and code
+  - `base/`: Base libraries used across projects
+
+- `samples/`: Sample media files for testing
+  - Contains sample audio files (e.g., sample.mp3)
+
+- Configuration files:
+  - `pip-requirements.txt`: Python dependencies
+  - `dev-requirements.txt`: Development-specific Python dependencies
+  - `.gitignore`: Git ignore patterns
+
+This structure follows a modular design pattern where:
+1. Services live in `projects/`
+2. Infrastructure is defined in `infra/`
+3. Shared code is in `libs/`
+4. Sample data for testing is in `samples/`
