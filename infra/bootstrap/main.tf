@@ -4,7 +4,7 @@ provider "aws" {
 
 # S3 bucket for storing Terraform state
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "${var.project_name}-terraform-state-${var.environment}"
+  bucket = "${var.project_name}-terraform-state"
   
   # Prevent accidental deletion
   lifecycle {
