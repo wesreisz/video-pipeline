@@ -1,0 +1,66 @@
+---
+description: Rule for using terraform to create infrastructure
+globs: *.tf
+alwaysApply: false
+---
+# Terraform Standards and Best Practices
+Description: Standards and best practices for Terraform implementation in the Video Pipeline project
+
+This document outlines the standards and best practices for using Terraform in the Video Pipeline project. Following these guidelines will ensure consistency, maintainability, and reliability of our infrastructure code.
+
+## File Organization
+
+```
+infra/
+├── environments/
+│   ├── dev/
+│   │   ├── main.tf
+│   │   ├── variables.tf
+│   │   └── outputs.tf
+│   └── prod/
+├── modules/
+    ├── s3/
+```
+
+- Organize resources by logical components (modules)
+- Separate environment-specific configurations
+- Use consistent file naming across all modules
+
+## Naming Conventions
+
+### Resource Naming
+
+- Use snake_case for all resource names
+- Prefix resources with purpose or component
+- Include environment in resource names where appropriate
+
+### Variable Naming
+
+- Use descriptive names that indicate purpose
+- For module inputs, use consistent naming across modules
+- Prefix environment-specific variables with `env_`
+
+## Module Structure
+
+Each module should include:
+
+1. `main.tf` - Primary resource definitions
+2. `variables.tf` - Input variables
+3. `outputs.tf` - Output values
+4. `README.md` - Documentation
+
+## Security Practices
+
+- Store sensitive values in AWS Secrets Manager, not in code
+- Use IAM roles with least privilege
+- Enable encryption for all applicable resources
+- Use security groups to restrict access
+- Regularly audit IAM permissions
+
+## Code Quality
+
+- Run `terraform fmt` before committing code
+- Run `terraform validate` to check for errors
+- Use consistent indentation (2 spaces)
+- Use comments to explain complex configurations
+- Keep resource blocks concise and focused
