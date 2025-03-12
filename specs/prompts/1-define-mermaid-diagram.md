@@ -1,0 +1,1 @@
+define a rule that creates digrams using mermaid for my documentation and readme files.

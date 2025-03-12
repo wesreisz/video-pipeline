@@ -1,0 +1,138 @@
+---
+description: This rule defines standards for creating and including diagrams using Mermaid in our documentation and README files.
+globs: 
+alwaysApply: false
+---
+ # Mermaid Diagram Standards
+
+## Overview
+
+This rule defines standards for creating and including diagrams using Mermaid in our documentation and README files.
+
+## What is Mermaid?
+
+Mermaid is a JavaScript-based diagramming and charting tool that renders text definitions into diagrams. It allows you to create diagrams using a simple markdown-like syntax.
+
+## Diagram Types
+
+The following diagram types are supported and recommended:
+
+### 1. Flow Charts
+
+Use for process flows, decision trees, and algorithms.
+
+```mermaid
+graph TD
+    A[Start] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> B
+```
+
+### 2. Sequence Diagrams
+
+Use for API interactions, service communications, and function calls.
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant API
+    participant Database
+    
+    Client->>API: Request Data
+    API->>Database: Query
+    Database-->>API: Return Results
+    API-->>Client: Response
+```
+
+### 3. Entity Relationship Diagrams
+
+Use for database schemas and data relationships.
+
+```mermaid
+erDiagram
+    USER ||--o{ ORDER : places
+    ORDER ||--|{ LINE_ITEM : contains
+    USER {
+        string id
+        string name
+        string email
+    }
+    ORDER {
+        string id
+        date created_at
+        string status
+    }
+    LINE_ITEM {
+        string id
+        string product_id
+        int quantity
+    }
+```
+
+### 4. Class Diagrams
+
+Use for object-oriented design and architecture documentation.
+
+```mermaid
+classDiagram
+    class Service {
+        +start()
+        +stop()
+    }
+    class VideoService {
+        -processor
+        +processVideo()
+    }
+    Service <|-- VideoService
+```
+
+### 5. State Diagrams
+
+Use for state machines and workflow states.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Processing
+    Processing --> Complete
+    Processing --> Failed
+    Complete --> [*]
+    Failed --> [*]
+```
+
+## Style Guide
+
+1. **Keep diagrams simple** - Focus on what's important
+2. **Use consistent naming** - Maintain the same names across all diagrams
+3. **Add comments** - Explain complex parts with comments
+4. **Use colors sparingly** - Only highlight the most important elements
+
+## How to Include in Documentation
+
+Include Mermaid diagrams in markdown files using the following syntax:
+
+````markdown
+```mermaid
+diagram-definition-here
+```
+````
+
+## Example: Video Pipeline Architecture
+
+```mermaid
+graph TD
+    Upload[Upload Service] --> Queue[Message Queue]
+    Queue --> Transcribe[Transcription Service]
+    Queue --> Thumbnail[Thumbnail Generator]
+    Transcribe --> Storage[Object Storage]
+    Thumbnail --> Storage
+    Storage --> Delivery[Content Delivery]
+```
+
+## Rendering
+
+When viewing the documentation:
+- GitHub automatically renders Mermaid diagrams in Markdown files
+- For local development, use a Markdown editor that supports Mermaid (e.g., VS Code with extensions)
+- For documentation sites, ensure the Mermaid JavaScript library is included
