@@ -1,0 +1,1 @@
+Automate the end to end test in 6-end2end-test.md using a python test script. Put the script in the tests folder.

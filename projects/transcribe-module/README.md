@@ -9,8 +9,9 @@ The transcription module works as follows:
 1. Audio files (.mp3) are uploaded to an S3 input bucket
 2. An S3 event triggers the Lambda function
 3. The Lambda function:
-   - Downloads the audio file
-   - Transcribes the audio (using AWS Transcribe in a real implementation)
+   - Starts an AWS Transcribe job for the audio file
+   - Waits for the transcription job to complete
+   - Extracts the transcription text from the AWS Transcribe output
    - Uploads the transcription result to the output bucket as JSON
 
 ## Getting Started
@@ -21,6 +22,7 @@ The transcription module works as follows:
 - Terraform >= 0.14
 - Python 3.9+
 - Docker (for local testing with LocalStack)
+- AWS Transcribe service access
 
 ### Deployment
 
@@ -131,13 +133,15 @@ For more advanced local Lambda testing with AWS SAM:
 The Lambda function uses the following environment variables:
 
 - `TRANSCRIPTION_OUTPUT_BUCKET`: The S3 bucket where transcription results are stored
+- `TRANSCRIBE_REGION`: The AWS region for the Transcribe service (defaults to us-east-1)
 
 ## Troubleshooting
 
 - **Error connecting to LocalStack**: Make sure Docker is running and the LocalStack container is accessible.
 - **Missing AWS credentials**: For local testing, LocalStack uses dummy credentials (access_key=test, secret_key=test).
 - **Lambda timeout**: Increase the timeout value in the Terraform configuration.
+- **Transcribe job failures**: Check the CloudWatch logs for the Lambda function and the Transcribe service console.
 
 ## Contributing
 
-Follow the project's code style and ensure that tests pass before submitting pull requests. 
+Follow the project's code style and ensure that tests pass before submitting pull requests.

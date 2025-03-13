@@ -59,6 +59,36 @@ resource "aws_iam_policy" "s3_access" {
   })
 }
 
+# AWS Transcribe access policy
+resource "aws_iam_policy" "transcribe_access" {
+  count = var.enable_transcribe ? 1 : 0
+  
+  name        = "${var.function_name}_transcribe_access"
+  description = "AWS Transcribe access for ${var.function_name} Lambda"
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "transcribe:StartTranscriptionJob",
+          "transcribe:GetTranscriptionJob",
+          "transcribe:ListTranscriptionJobs"
+        ]
+        Effect   = "Allow"
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "transcribe_access" {
+  count = var.enable_transcribe ? 1 : 0
+  
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.transcribe_access[0].arn
+}
+
 resource "aws_iam_role_policy_attachment" "s3_access" {
   count = length(var.s3_bucket_arns) > 0 ? 1 : 0
   

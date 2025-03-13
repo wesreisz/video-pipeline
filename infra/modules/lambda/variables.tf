@@ -48,8 +48,14 @@ variable "s3_bucket_arns" {
   default     = []
 }
 
+variable "enable_transcribe" {
+  description = "Whether to enable AWS Transcribe permissions"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
-  description = "Tags to apply to resources"
+  description = "A map of tags to add to all resources"
   type        = map(string)
   default     = {}
 } 

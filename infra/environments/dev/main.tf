@@ -67,12 +67,15 @@ module "transcribe_lambda" {
   
   environment_variables = {
     TRANSCRIPTION_OUTPUT_BUCKET = module.transcription_bucket.bucket_id
+    TRANSCRIBE_REGION           = "us-east-1"
   }
   
   s3_bucket_arns = [
     module.audio_bucket.bucket_arn,
     module.transcription_bucket.bucket_arn
   ]
+  
+  enable_transcribe = true
   
   tags = {
     Environment = "dev"

@@ -1,0 +1,1 @@
+The transcribe module should be refactored to use AWS Transcribe. Please provide a detailed plan for the refactoring process, including any necessary changes to the codebase and any potential challenges that may arise during the process. This should include changes to terraform code and necessary changes to the codebase.

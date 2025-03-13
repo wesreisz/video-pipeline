@@ -1,4 +1,4 @@
-.PHONY: start-localstack stop-localstack test-local unit-tests
+.PHONY: start-localstack stop-localstack test-local unit-tests e2e-test
 
 # Default Python interpreter
 PYTHON=python3
@@ -64,6 +64,11 @@ setup-dev: create-sample
 # Run the full local test workflow
 test-workflow: stop-localstack start-localstack create-sample test-local stop-localstack
 
+# Run end-to-end test for transcribe module
+e2e-test:
+	@echo "Running end-to-end test for transcribe module..."
+	@projects/transcribe-module/tests/e2e/run_test.sh
+
 # Help
 help:
 	@echo "Available commands:"
@@ -74,6 +79,7 @@ help:
 	@echo "  make unit-tests       - Run unit tests"
 	@echo "  make test-local       - Run local test with LocalStack"
 	@echo "  make test-workflow    - Run full test workflow"
+	@echo "  make e2e-test         - Run end-to-end test for transcribe module"
 	@echo "  make clean            - Clean up generated files"
 
 # Default target

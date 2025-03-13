@@ -1,7 +1,8 @@
 import boto3
 import json
 import logging
-from datetime import datetime
+import datetime
+from boto3 import client
 
 logger = logging.getLogger()
 
@@ -14,14 +15,14 @@ class S3Utils:
     
     def download_file(self, bucket, key, local_path):
         """
-        Download a file from S3 to a local path
+        Download a file from S3
         
         Args:
             bucket (str): S3 bucket name
             key (str): S3 object key
-            local_path (str): Local file path to save to
+            local_path (str): Local path to save the file
         """
-        logger.info(f"Downloading {bucket}/{key} to {local_path}")
+        logger.info(f"Downloading s3://{bucket}/{key} to {local_path}")
         self.s3_client.download_file(bucket, key, local_path)
     
     def upload_file(self, local_path, bucket, key):
@@ -54,11 +55,28 @@ class S3Utils:
             ContentType='application/json'
         )
     
+    def download_json(self, bucket, key):
+        """
+        Download and parse a JSON file from S3
+        
+        Args:
+            bucket (str): S3 bucket name
+            key (str): S3 object key of JSON file
+            
+        Returns:
+            dict: Parsed JSON content
+        """
+        logger.info(f"Downloading and parsing JSON from s3://{bucket}/{key}")
+        
+        response = self.s3_client.get_object(Bucket=bucket, Key=key)
+        content = response['Body'].read().decode('utf-8')
+        return json.loads(content)
+    
     def get_current_timestamp(self):
         """
-        Get current timestamp in ISO format
+        Generate current timestamp in ISO format
         
         Returns:
             str: ISO-formatted timestamp
         """
-        return datetime.utcnow().isoformat() 
+        return datetime.datetime.now().isoformat() 
