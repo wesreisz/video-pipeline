@@ -1,15 +1,15 @@
-# Audio Transcription Module
+# Media Transcription Module
 
-This module is part of the video pipeline project and handles transcription of audio files using AWS Lambda and S3.
+This module is part of the video pipeline project and handles transcription of audio and video files using AWS Lambda and S3.
 
 ## Overview
 
 The transcription module works as follows:
 
-1. Audio files (.mp3) are uploaded to an S3 input bucket
+1. Media files (audio: .mp3, .wav, .flac, .ogg | video: .mp4, .webm) are uploaded to an S3 input bucket
 2. An S3 event triggers the Lambda function
 3. The Lambda function:
-   - Starts an AWS Transcribe job for the audio file
+   - Starts an AWS Transcribe job for the media file
    - Waits for the transcription job to complete
    - Extracts the transcription text from the AWS Transcribe output
    - Uploads the transcription result to the output bucket as JSON
@@ -42,15 +42,37 @@ The transcription module works as follows:
 
 Once deployed, you can use the module by:
 
-1. Uploading an audio file to the input S3 bucket:
+1. Uploading a media file to the input S3 bucket:
+   
+   For audio files:
    ```
-   aws s3 cp samples/sample.mp3 s3://dev-audio-transcribe-input/
+   aws s3 cp samples/sample.mp3 s3://dev-media-transcribe-input/
+   ```
+   
+   For video files:
+   ```
+   aws s3 cp samples/sample.mp4 s3://dev-media-transcribe-input/
    ```
 
 2. The transcription will automatically be generated and stored in the output bucket:
    ```
-   aws s3 ls s3://dev-audio-transcribe-output/transcriptions/
+   aws s3 ls s3://dev-media-transcribe-output/transcriptions/
    ```
+
+## Supported Media Formats
+
+This module supports transcription of the following media types:
+
+### Audio Formats
+- MP3 (.mp3)
+- WAV (.wav, .wave)
+- FLAC (.flac)
+- OGG (.ogg)
+- AMR (.amr)
+
+### Video Formats
+- MP4 (.mp4)
+- WebM (.webm)
 
 ## Project Structure
 
@@ -141,6 +163,7 @@ The Lambda function uses the following environment variables:
 - **Missing AWS credentials**: For local testing, LocalStack uses dummy credentials (access_key=test, secret_key=test).
 - **Lambda timeout**: Increase the timeout value in the Terraform configuration.
 - **Transcribe job failures**: Check the CloudWatch logs for the Lambda function and the Transcribe service console.
+- **Unsupported media format**: Check that your file format is in the list of supported formats above.
 
 ## Contributing
 

@@ -1,20 +1,22 @@
 class TranscriptionResult:
     """Data model for transcription results"""
     
-    def __init__(self, original_file, transcription_text, timestamp, job_name=None):
+    def __init__(self, original_file, transcription_text, timestamp, job_name=None, media_type='audio'):
         """
         Initialize a new transcription result
         
         Args:
-            original_file (str): Path to the original audio file
+            original_file (str): Path to the original audio or video file
             transcription_text (str): The transcribed text
             timestamp (str): ISO-formatted timestamp of when the transcription was created
             job_name (str, optional): AWS Transcribe job name
+            media_type (str, optional): Type of media ('audio' or 'video'), defaults to 'audio'
         """
         self.original_file = original_file
         self.transcription_text = transcription_text
         self.timestamp = timestamp
         self.job_name = job_name
+        self.media_type = media_type
         
     def to_dict(self):
         """
@@ -26,7 +28,8 @@ class TranscriptionResult:
         result = {
             'original_file': self.original_file,
             'transcription_text': self.transcription_text,
-            'timestamp': self.timestamp
+            'timestamp': self.timestamp,
+            'media_type': self.media_type
         }
         
         # Add job_name if it exists
@@ -50,5 +53,6 @@ class TranscriptionResult:
             original_file=data.get('original_file'),
             transcription_text=data.get('transcription_text'),
             timestamp=data.get('timestamp'),
-            job_name=data.get('job_name')
+            job_name=data.get('job_name'),
+            media_type=data.get('media_type', 'audio')  # Default to 'audio' for backward compatibility
         ) 

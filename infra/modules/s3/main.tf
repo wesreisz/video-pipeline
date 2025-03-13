@@ -1,6 +1,10 @@
 resource "aws_s3_bucket" "this" {
   bucket = var.bucket_name
-  tags   = var.tags
+  
+  # Enable force destroy during testing to allow clean up
+  force_destroy = true
+  
+  tags = var.tags
 }
 
 # Enable versioning if specified

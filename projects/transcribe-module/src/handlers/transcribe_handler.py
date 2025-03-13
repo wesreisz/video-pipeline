@@ -47,8 +47,8 @@ def lambda_handler(event, context):
         s3_utils = S3Utils()
         transcription_service = TranscriptionService()
         
-        # Process the audio file
-        output_key = transcription_service.process_audio(bucket, key)
+        # Process the media file (audio or video)
+        output_key = transcription_service.process_media(bucket, key)
         
         return {
             'statusCode': 200,

@@ -11,7 +11,7 @@ from utils.s3_utils import S3Utils
 logger = logging.getLogger()
 
 class TranscriptionService:
-    """Service to handle audio transcription logic using AWS Transcribe"""
+    """Service to handle audio and video transcription logic using AWS Transcribe"""
     
     def __init__(self):
         self.s3_utils = S3Utils()
@@ -19,13 +19,13 @@ class TranscriptionService:
         self.region = os.environ.get('TRANSCRIBE_REGION', 'us-east-1')
         self.transcribe_client = boto3.client('transcribe', region_name=self.region)
         
-    def process_audio(self, bucket, key):
+    def process_media(self, bucket, key):
         """
-        Process an audio file from S3 and generate transcription using AWS Transcribe
+        Process an audio or video file from S3 and generate transcription using AWS Transcribe
         
         Args:
             bucket (str): Source S3 bucket name
-            key (str): S3 object key for the audio file
+            key (str): S3 object key for the audio or video file
             
         Returns:
             str: The S3 key where the transcription was saved
@@ -36,16 +36,29 @@ class TranscriptionService:
         job_name = f"transcribe-{str(uuid.uuid4())}"
         file_uri = f"s3://{bucket}/{key}"
         
+        # Determine if the file is audio or video based on extension
         # Start transcription job
-        media_format = os.path.splitext(key)[1][1:].lower()  # Get file extension without dot
-        if media_format == 'mp3':
-            media_format = 'mp3'
-        elif media_format in ['wav', 'wave']:
-            media_format = 'wav'
+        extension = os.path.splitext(key)[1][1:].lower()  # Get file extension without dot
+        
+        # Determine media format based on file extension
+        if extension in ['mp3', 'mp4', 'wav', 'wave', 'flac', 'ogg', 'amr', 'webm']:
+            if extension == 'mp4' or extension == 'webm':
+                media_type = 'video'
+                media_format = extension
+            else:
+                media_type = 'audio'
+                # Normalize audio format names for AWS Transcribe
+                if extension in ['wav', 'wave']:
+                    media_format = 'wav'
+                else:
+                    media_format = extension
         else:
-            media_format = 'mp3'  # Default to mp3 if unknown
+            # Default assumption if unknown extension
+            logger.warning(f"Unknown file extension: {extension}, defaulting to mp3 audio format")
+            media_type = 'audio'
+            media_format = 'mp3'
             
-        logger.info(f"Starting AWS Transcribe job: {job_name} for {file_uri} with format {media_format}")
+        logger.info(f"Starting AWS Transcribe job: {job_name} for {file_uri} with format {media_format} ({media_type})")
         
         try:
             # Start the transcription job
@@ -66,7 +79,8 @@ class TranscriptionService:
                 original_file=key,
                 transcription_text=transcription_text,
                 timestamp=self.s3_utils.get_current_timestamp(),
-                job_name=job_name
+                job_name=job_name,
+                media_type=media_type
             )
             
             # Save result to S3 in our standard format
@@ -80,6 +94,21 @@ class TranscriptionService:
             logger.error(f"Error during transcription: {str(e)}")
             raise
     
+    # Keep backward compatibility with existing code
+    def process_audio(self, bucket, key):
+        """
+        Process an audio file from S3 (legacy method, calls process_media)
+        
+        Args:
+            bucket (str): Source S3 bucket name
+            key (str): S3 object key for the audio file
+            
+        Returns:
+            str: The S3 key where the transcription was saved
+        """
+        logger.info("Using legacy process_audio method, redirecting to process_media")
+        return self.process_media(bucket, key)
+            
     def _wait_for_transcription(self, job_name, max_attempts=30, delay_seconds=10):
         """
         Wait for an AWS Transcribe job to complete
