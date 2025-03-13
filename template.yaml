@@ -1,0 +1,56 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Audio Transcription Module
+  SAM Template for local testing
+
+Resources:
+  TranscriptionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: projects/transcribe-module/src/
+      Handler: handlers/transcribe_handler.lambda_handler
+      Runtime: python3.9
+      Timeout: 60
+      MemorySize: 256
+      Environment:
+        Variables:
+          TRANSCRIPTION_OUTPUT_BUCKET: test-transcription-output
+      Events:
+        S3Event:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: InputBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .mp3
+      Policies:
+        - S3ReadPolicy:
+            BucketName: !Ref InputBucket
+        - S3CrudPolicy:
+            BucketName: !Ref OutputBucket
+
+  InputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: test-audio-input
+
+  OutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: test-transcription-output
+
+Outputs:
+  TranscriptionFunction:
+    Description: "Transcription Lambda Function ARN"
+    Value: !GetAtt TranscriptionFunction.Arn
+  InputBucket:
+    Description: "S3 bucket for input audio files"
+    Value: !Ref InputBucket
+  OutputBucket:
+    Description: "S3 bucket for transcription results"
+    Value: !Ref OutputBucket 

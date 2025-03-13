@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  localstack:
+    container_name: localstack
+    image: localstack/localstack
+    ports:
+      - "4566:4566"            # LocalStack Gateway
+      - "4510-4559:4510-4559"  # External services port range
+    environment:
+      - SERVICES=s3,lambda,dynamodb
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DATA_DIR=/tmp/localstack/data
+      - LAMBDA_EXECUTOR=local
+      - HOST_TMP_FOLDER=${TMPDIR:-/tmp/}localstack
+      - LOCALSTACK_WEB_APP=https://app.localstack.cloud
+    volumes:
+      - "${TMPDIR:-/tmp}/localstack:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+# Note: To browse S3 buckets and objects, you can use:
+# 1. LocalStack Web Application at https://app.localstack.cloud (connect to your local instance)
+# 2. AWS CLI: aws --endpoint-url=http://localhost:4566 s3 ls
+# 3. AWS console: aws --endpoint-url=http://localhost:4566 s3 presign s3://bucket-name/object-key 

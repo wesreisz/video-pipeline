@@ -1,0 +1,1 @@
+ets deploy this using terraform now to aws. make sure to use s3 backend and video-pipeline-terraform-locks-dev 
