@@ -1,0 +1,1 @@
+Create a comprehensive README.md for a video pipeline project that includes project overview, architecture, structure, installation instructions, and then update the deployment section to include Terraform instructions and recommend Apache License 2.0 as the appropriate open-source license for the project.
