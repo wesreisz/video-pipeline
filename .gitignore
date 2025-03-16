@@ -42,9 +42,6 @@ docs/_build/
 .venv
 venv/
 
-samples
-!samples/sample.mp3
-
 # Logs
 logs
 *.log
