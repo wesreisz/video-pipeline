@@ -63,7 +63,7 @@ def upload_test_file(bucket_name, file_type='audio'):
         object_key = f'{folder}/test_audio.mp3'
     else:  # video
         filename = 'sample.mp4'
-        folder = 'videos'
+        folder = 'media'
         object_key = f'{folder}/test_video.mp4'
     
     test_file = os.path.join(os.path.dirname(__file__), '..', '..', 'samples', filename)

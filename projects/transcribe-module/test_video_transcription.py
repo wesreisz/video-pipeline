@@ -67,7 +67,7 @@ def upload_test_video(bucket_name):
     
     # Upload to S3
     filename = os.path.basename(VIDEO_FILE_PATH)
-    object_key = f'videos/{filename}'
+    object_key = f'media/{filename}'
     s3.upload_file(VIDEO_FILE_PATH, bucket_name, object_key)
     logger.info(f"Uploaded test video file to s3://{bucket_name}/{object_key}")
     

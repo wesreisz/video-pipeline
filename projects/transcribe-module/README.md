@@ -46,12 +46,12 @@ Once deployed, you can use the module by:
    
    For audio files:
    ```
-   aws s3 cp samples/sample.mp3 s3://dev-media-transcribe-input/
+   aws s3 cp samples/sample.mp3 s3://dev-media-transcribe-input/audio/
    ```
    
    For video files:
    ```
-   aws s3 cp samples/sample.mp4 s3://dev-media-transcribe-input/
+   aws s3 cp samples/sample.mp4 s3://dev-media-transcribe-input/media/
    ```
 
 2. The transcription will automatically be generated and stored in the output bucket:
