@@ -1,7 +1,7 @@
 class TranscriptionResult:
     """Data model for transcription results"""
     
-    def __init__(self, original_file, transcription_text, timestamp, job_name=None, media_type='audio'):
+    def __init__(self, original_file, transcription_text, timestamp, job_name=None, media_type='audio', segments=None):
         """
         Initialize a new transcription result
         
@@ -11,12 +11,14 @@ class TranscriptionResult:
             timestamp (str): ISO-formatted timestamp of when the transcription was created
             job_name (str, optional): AWS Transcribe job name
             media_type (str, optional): Type of media ('audio' or 'video'), defaults to 'audio'
+            segments (list, optional): List of time-stamped segments from the transcription
         """
         self.original_file = original_file
         self.transcription_text = transcription_text
         self.timestamp = timestamp
         self.job_name = job_name
         self.media_type = media_type
+        self.segments = segments or []
         
     def to_dict(self):
         """
@@ -35,6 +37,10 @@ class TranscriptionResult:
         # Add job_name if it exists
         if self.job_name:
             result['job_name'] = self.job_name
+        
+        # Only add segments if they exist and the list is not empty
+        if self.segments:
+            result['segments'] = self.segments
             
         return result
         
@@ -54,5 +60,6 @@ class TranscriptionResult:
             transcription_text=data.get('transcription_text'),
             timestamp=data.get('timestamp'),
             job_name=data.get('job_name'),
-            media_type=data.get('media_type', 'audio')  # Default to 'audio' for backward compatibility
+            media_type=data.get('media_type', 'audio'),  # Default to 'audio' for backward compatibility
+            segments=data.get('segments', [])
         ) 

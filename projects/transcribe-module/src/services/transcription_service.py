@@ -72,7 +72,7 @@ class TranscriptionService:
             )
             
             # Wait for transcription job to complete
-            transcription_text = self._wait_for_transcription(job_name)
+            transcription_text, segments = self._wait_for_transcription(job_name)
             
             # Create result object with our standard format
             result = TranscriptionResult(
@@ -80,7 +80,8 @@ class TranscriptionService:
                 transcription_text=transcription_text,
                 timestamp=self.s3_utils.get_current_timestamp(),
                 job_name=job_name,
-                media_type=media_type
+                media_type=media_type,
+                segments=segments
             )
             
             # Save result to S3 in our standard format
@@ -119,7 +120,7 @@ class TranscriptionService:
             delay_seconds (int): Seconds to wait between polling attempts
             
         Returns:
-            str: Transcribed text
+            tuple: (transcribed_text, segments)
         """
         logger.info(f"Waiting for transcription job {job_name} to complete")
         
@@ -138,8 +139,34 @@ class TranscriptionService:
                 transcript_json = self.s3_utils.download_json(self.output_bucket, transcript_file_key)
                 
                 # Extract transcript text from AWS Transcribe output format
-                transcription_text = transcript_json.get('results', {}).get('transcripts', [{}])[0].get('transcript', '')
-                return transcription_text
+                results = transcript_json.get('results', {})
+                transcription_text = results.get('transcripts', [{}])[0].get('transcript', '')
+                
+                # Extract segments (items) with timestamps
+                segments = results.get('items', [])
+                
+                # Process segments if exists
+                if segments:
+                    logger.info(f"Extracted {len(segments)} segments from transcription")
+                    
+                    # We're only keeping the essential information from each segment
+                    processed_segments = []
+                    for segment in segments:
+                        if segment.get('type') in ['pronunciation', 'punctuation']:
+                            processed_segment = {
+                                'type': segment.get('type'),
+                                'content': segment.get('alternatives', [{}])[0].get('content', ''),
+                                'start_time': segment.get('start_time'),
+                                'end_time': segment.get('end_time'),
+                                'confidence': segment.get('alternatives', [{}])[0].get('confidence', '0')
+                            }
+                            processed_segments.append(processed_segment)
+                    
+                    logger.info(f"Processed {len(processed_segments)} segments")
+                    return transcription_text, processed_segments
+                else:
+                    logger.warning("No segments found in transcription output")
+                    return transcription_text, []
                 
             elif status == 'FAILED':
                 failure_reason = response['TranscriptionJob'].get('FailureReason', 'Unknown reason')

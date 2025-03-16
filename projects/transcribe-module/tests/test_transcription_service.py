@@ -35,7 +35,13 @@ class TestTranscriptionService(unittest.TestCase):
         """Test processing an audio file"""
         # Setup mocks
         self.service.s3_utils.get_current_timestamp.return_value = '2023-04-01T12:00:00'
-        self.service._wait_for_transcription = MagicMock(return_value="This is a test transcription")
+        self.service._wait_for_transcription = MagicMock(return_value=("This is a test transcription", [
+            {"type": "pronunciation", "start_time": "0.0", "end_time": "0.62", "content": "This"},
+            {"type": "pronunciation", "start_time": "0.62", "end_time": "0.81", "content": "is"},
+            {"type": "pronunciation", "start_time": "0.81", "end_time": "0.93", "content": "a"},
+            {"type": "pronunciation", "start_time": "0.93", "end_time": "1.25", "content": "test"},
+            {"type": "pronunciation", "start_time": "1.25", "end_time": "2.21", "content": "transcription"}
+        ]))
         
         # Mock the transcription job response
         self.service.transcribe_client.get_transcription_job.return_value = {
@@ -62,7 +68,14 @@ class TestTranscriptionService(unittest.TestCase):
             'transcription_text': 'This is a test transcription',
             'timestamp': '2023-04-01T12:00:00',
             'job_name': 'transcribe-test-uuid',
-            'media_type': 'audio'
+            'media_type': 'audio',
+            'segments': [
+                {"type": "pronunciation", "start_time": "0.0", "end_time": "0.62", "content": "This"},
+                {"type": "pronunciation", "start_time": "0.62", "end_time": "0.81", "content": "is"},
+                {"type": "pronunciation", "start_time": "0.81", "end_time": "0.93", "content": "a"},
+                {"type": "pronunciation", "start_time": "0.93", "end_time": "1.25", "content": "test"},
+                {"type": "pronunciation", "start_time": "1.25", "end_time": "2.21", "content": "transcription"}
+            ]
         }
         
         self.service.s3_utils.upload_json.assert_called_once_with(
@@ -76,7 +89,14 @@ class TestTranscriptionService(unittest.TestCase):
         """Test processing a video file"""
         # Setup mocks
         self.service.s3_utils.get_current_timestamp.return_value = '2023-04-01T12:00:00'
-        self.service._wait_for_transcription = MagicMock(return_value="This is a test video transcription")
+        self.service._wait_for_transcription = MagicMock(return_value=("This is a test video transcription", [
+            {"type": "pronunciation", "start_time": "0.0", "end_time": "0.62", "content": "This"},
+            {"type": "pronunciation", "start_time": "0.62", "end_time": "0.81", "content": "is"},
+            {"type": "pronunciation", "start_time": "0.81", "end_time": "0.93", "content": "a"},
+            {"type": "pronunciation", "start_time": "0.93", "end_time": "1.25", "content": "test"},
+            {"type": "pronunciation", "start_time": "1.25", "end_time": "1.71", "content": "video"},
+            {"type": "pronunciation", "start_time": "1.71", "end_time": "2.51", "content": "transcription"}
+        ]))
         
         # Mock the transcription job response
         self.service.transcribe_client.get_transcription_job.return_value = {
@@ -103,7 +123,15 @@ class TestTranscriptionService(unittest.TestCase):
             'transcription_text': 'This is a test video transcription',
             'timestamp': '2023-04-01T12:00:00',
             'job_name': 'transcribe-test-uuid',
-            'media_type': 'video'
+            'media_type': 'video',
+            'segments': [
+                {"type": "pronunciation", "start_time": "0.0", "end_time": "0.62", "content": "This"},
+                {"type": "pronunciation", "start_time": "0.62", "end_time": "0.81", "content": "is"},
+                {"type": "pronunciation", "start_time": "0.81", "end_time": "0.93", "content": "a"},
+                {"type": "pronunciation", "start_time": "0.93", "end_time": "1.25", "content": "test"},
+                {"type": "pronunciation", "start_time": "1.25", "end_time": "1.71", "content": "video"},
+                {"type": "pronunciation", "start_time": "1.71", "end_time": "2.51", "content": "transcription"}
+            ]
         }
         
         self.service.s3_utils.upload_json.assert_called_once_with(

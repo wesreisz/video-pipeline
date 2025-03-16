@@ -92,7 +92,37 @@ def mock_transcribe_service():
     def mock_wait_for_transcription(self, job_name, max_attempts=30, delay_seconds=10):
         logger.info(f"Using mocked transcription service. Would have waited for job: {job_name}")
         logger.info("Returning mock transcription result")
-        return "This is a mock transcription for the AYAWA Spring QCon Plus video. The mock transcription service has processed this video file successfully."
+        mock_transcription = "This is a mock transcription for the AYAWA Spring QCon Plus video. The mock transcription service has processed this video file successfully."
+        
+        # Create mock segments
+        mock_segments = [
+            {"type": "pronunciation", "start_time": "0.0", "end_time": "0.62", "content": "This"},
+            {"type": "pronunciation", "start_time": "0.62", "end_time": "0.81", "content": "is"},
+            {"type": "pronunciation", "start_time": "0.81", "end_time": "0.93", "content": "a"},
+            {"type": "pronunciation", "start_time": "0.93", "end_time": "1.25", "content": "mock"},
+            {"type": "pronunciation", "start_time": "1.25", "end_time": "2.15", "content": "transcription"},
+            {"type": "pronunciation", "start_time": "2.15", "end_time": "2.37", "content": "for"},
+            {"type": "pronunciation", "start_time": "2.37", "end_time": "2.49", "content": "the"},
+            {"type": "pronunciation", "start_time": "2.49", "end_time": "3.15", "content": "AYAWA"},
+            {"type": "pronunciation", "start_time": "3.15", "end_time": "3.35", "content": "Spring"},
+            {"type": "pronunciation", "start_time": "3.35", "end_time": "3.65", "content": "QCon"},
+            {"type": "pronunciation", "start_time": "3.65", "end_time": "3.85", "content": "Plus"},
+            {"type": "pronunciation", "start_time": "3.85", "end_time": "4.15", "content": "video"},
+            {"type": "punctuation", "start_time": null, "end_time": null, "content": "."},
+            {"type": "pronunciation", "start_time": "4.35", "end_time": "4.45", "content": "The"},
+            {"type": "pronunciation", "start_time": "4.45", "end_time": "4.75", "content": "mock"},
+            {"type": "pronunciation", "start_time": "4.75", "end_time": "5.25", "content": "transcription"},
+            {"type": "pronunciation", "start_time": "5.25", "end_time": "5.55", "content": "service"},
+            {"type": "pronunciation", "start_time": "5.55", "end_time": "5.75", "content": "has"},
+            {"type": "pronunciation", "start_time": "5.75", "end_time": "6.15", "content": "processed"},
+            {"type": "pronunciation", "start_time": "6.15", "end_time": "6.25", "content": "this"},
+            {"type": "pronunciation", "start_time": "6.25", "end_time": "6.55", "content": "video"},
+            {"type": "pronunciation", "start_time": "6.55", "end_time": "6.75", "content": "file"},
+            {"type": "pronunciation", "start_time": "6.75", "end_time": "7.25", "content": "successfully"},
+            {"type": "punctuation", "start_time": null, "end_time": null, "content": "."}
+        ]
+        
+        return mock_transcription, mock_segments
     
     # Apply the patch
     TranscriptionService._wait_for_transcription = mock_wait_for_transcription
