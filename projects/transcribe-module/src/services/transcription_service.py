@@ -95,21 +95,6 @@ class TranscriptionService:
             logger.error(f"Error during transcription: {str(e)}")
             raise
     
-    # Keep backward compatibility with existing code
-    def process_audio(self, bucket, key):
-        """
-        Process an audio file from S3 (legacy method, calls process_media)
-        
-        Args:
-            bucket (str): Source S3 bucket name
-            key (str): S3 object key for the audio file
-            
-        Returns:
-            str: The S3 key where the transcription was saved
-        """
-        logger.info("Using legacy process_audio method, redirecting to process_media")
-        return self.process_media(bucket, key)
-            
     def _wait_for_transcription(self, job_name, max_attempts=30, delay_seconds=10):
         """
         Wait for an AWS Transcribe job to complete
