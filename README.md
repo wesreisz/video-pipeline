@@ -35,16 +35,12 @@ graph LR
 - **modules/**: Individual service implementations
   - `transcribe-module/`: Service for transcribing audio files
 
-- **libs/**: Shared libraries and code
-  - `base/`: Base libraries used across projects
-
 - **samples/**: Sample media files for testing
 
 - **Configuration files:**
-  - `pip-requirements.txt`: Python dependencies
+  - `requirements.txt`: Python dependencies
   - `dev-requirements.txt`: Development-specific Python dependencies
   - `template.yaml`: SAM template for AWS resources
-  - `docker-compose.yml`: Local development environment
 
 ## Prerequisites
 
@@ -74,14 +70,6 @@ graph LR
    pip install -r requirements.txt
    pip install -r dev-requirements.txt  # For development
    ```
-
-### Local Development
-
-Use Docker Compose to set up the local environment:
-
-```
-docker-compose up
-```
 
 ### Deployment
 
