@@ -34,19 +34,38 @@ Write a Python script named `test_pipeline_e2e.py` that:
    - Output bucket name
    - Path to sample audio/video file
    - Optional timeout value (default: 300 seconds)
+   - Optional cleanup flag to remove test files after completion
 
 2. Uses boto3 to interact with AWS services
 
 3. Implements a test flow that:
-   - Uploads the sample file to the input bucket
+   - Uploads the sample file to the input bucket with a unique test ID suffix
    - Waits for the transcription to appear in the output bucket
+   - **IMPORTANT**: Only verifies transcription files that contain the SAME test ID as the uploaded file
    - Downloads and verifies the transcription content
    - Outputs clear progress and results information
    - Returns appropriate exit code (0 for success, 1 for failure)
 
 4. Includes robust error handling for potential issues
 
-5. Uses a unique ID for each test run to avoid conflicts
+5. Uses a unique ID for each test run to avoid conflicts:
+   - Append this ID to both input and output file names
+   - Use this ID to match the output file to the specific input file
+   - Do not verify files from previous test runs or files without matching IDs
+
+6. Implements cleanup functionality to:
+   - Remove old test files before starting (optional)
+   - Clean up test files after completion (when cleanup flag is enabled)
+   - Only delete files with the current test ID
+
+### File Naming and Verification Pattern
+
+To ensure consistent verification:
+
+1. Input files should be uploaded with pattern: `media/{base_name}_{test_id}{extension}`
+2. When searching for output files, verify they contain the same test ID with pattern: `transcriptions/{base_name}_{test_id}.json`
+3. Never verify an output file unless it has the exact same test ID as the input file
+4. Use explicit matching against the full test ID, not partial matches or prefix-only matches
 
 ### Shell Script Wrapper
 
@@ -55,6 +74,7 @@ Create a bash script named `run_e2e_test.sh` that:
 1. Accepts optional parameters:
    - Path to sample file (default: use a file from the samples directory)
    - Timeout value (default: 300 seconds)
+   - Cleanup flag to remove test files after completion
 
 2. Uses Terraform outputs to automatically determine:
    - Input bucket name
@@ -96,7 +116,7 @@ After implementation, a user should be able to:
    Waiting for transcription to complete...
    Transcription not ready yet, waiting 10 seconds...
    ...
-   ✅ Found transcription: transcriptions/hello_my_name_is_wes.json
+   ✅ Found transcription: transcriptions/hello_my_name_is_wes_12345678.json
    
    Verifying transcription content...
    ✅ Verification passed!
@@ -108,12 +128,20 @@ After implementation, a user should be able to:
 
 3. Get a proper exit code for integration with other tools
 
+4. Optionally clean up test files (both input and output)
+   ```
+   cd projects/transcribe-module/tests/e2e
+   ./run_e2e_test.sh --cleanup
+   ```
+
 ## Technical Constraints
 
 1. Test script should handle various audio/video formats
 2. Test should time out after a reasonable period if no results appear
 3. Use file naming that's consistent with our existing patterns
 4. Ensure the solution works on both Linux and macOS environments
+5. Always verify the exact file that was uploaded in the test, not any other file
+6. Maintain a one-to-one relationship between uploaded files and verified files using test IDs
 
 ## Acceptance Criteria
 
@@ -123,3 +151,5 @@ After implementation, a user should be able to:
 - [x] The test successfully passes when the pipeline is correctly configured
 - [x] The test correctly fails when the pipeline is not working
 - [x] Code includes proper error handling and reporting
+- [x] Test verifies only files with matching test IDs, never other files
+- [x] Optional cleanup functionality removes test files to prevent clutter

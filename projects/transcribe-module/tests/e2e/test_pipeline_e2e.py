@@ -16,6 +16,7 @@ def parse_args():
     parser.add_argument('--output-bucket', required=True, help='Name of the output S3 bucket')
     parser.add_argument('--sample-file', required=True, help='Path to the sample audio/video file')
     parser.add_argument('--timeout', type=int, default=300, help='Timeout in seconds (default: 300)')
+    parser.add_argument('--cleanup', action='store_true', help='Clean up test files after completion')
     return parser.parse_args()
 
 
@@ -37,14 +38,16 @@ def upload_file(file_path, bucket, s3_client, test_id):
         sys.exit(1)
 
 
-def wait_for_transcription(bucket, input_key, s3_client, timeout):
+def wait_for_transcription(bucket, input_key, s3_client, timeout, test_id):
     """Wait for the transcription to appear in the output bucket."""
     print("\nWaiting for transcription to complete...")
     
-    # Extract the base name without test ID suffix or extension
+    # Extract the base name without extension
     file_name = os.path.basename(input_key)
-    # Get the base name (before the underscore where the test ID begins)
-    base_name = file_name.split('_')[0]
+    base_name, _ = os.path.splitext(file_name)
+    
+    # The expected output should contain the same test_id
+    # Format is likely: transcriptions/hello-my_name_is_wes_<test_id>.json
     expected_prefix = f"transcriptions/{base_name}"
     
     start_time = time.time()
@@ -53,12 +56,15 @@ def wait_for_transcription(bucket, input_key, s3_client, timeout):
         try:
             response = s3_client.list_objects_v2(
                 Bucket=bucket,
-                Prefix=expected_prefix
+                Prefix=f"transcriptions/"
             )
             
             if 'Contents' in response:
                 for obj in response['Contents']:
-                    if obj['Key'].endswith('.json'):
+                    # Only consider JSON files that match our test_id
+                    if (obj['Key'].endswith('.json') and 
+                        test_id in obj['Key'] and
+                        base_name.split('_')[0] in obj['Key']):
                         print(f"✅ Found transcription: {obj['Key']}")
                         return obj['Key']
             
@@ -105,6 +111,41 @@ def verify_transcription(bucket, key, s3_client):
         sys.exit(1)
 
 
+def cleanup_test_files(input_bucket, output_bucket, test_id, s3_client):
+    """Clean up any files created during the test."""
+    print(f"\nCleaning up test files with ID {test_id}...")
+    
+    try:
+        # Find and delete input files
+        response = s3_client.list_objects_v2(
+            Bucket=input_bucket,
+            Prefix="media/"
+        )
+        
+        if 'Contents' in response:
+            for obj in response['Contents']:
+                if test_id in obj['Key']:
+                    print(f"Deleting input file: {obj['Key']}")
+                    s3_client.delete_object(Bucket=input_bucket, Key=obj['Key'])
+        
+        # Find and delete output files
+        response = s3_client.list_objects_v2(
+            Bucket=output_bucket,
+            Prefix="transcriptions/"
+        )
+        
+        if 'Contents' in response:
+            for obj in response['Contents']:
+                if test_id in obj['Key']:
+                    print(f"Deleting output file: {obj['Key']}")
+                    s3_client.delete_object(Bucket=output_bucket, Key=obj['Key'])
+        
+        print("✅ Cleanup completed")
+    
+    except ClientError as e:
+        print(f"⚠️ WARNING: Failed to clean up some test files: {e}", file=sys.stderr)
+
+
 def main():
     """Main function to run the end-to-end test."""
     args = parse_args()
@@ -123,23 +164,67 @@ def main():
     # Create S3 client
     s3_client = boto3.client('s3')
     
+    # Clean up any existing test files before starting
+    if args.cleanup:
+        # Find and delete existing files from previous tests
+        print("\nCleaning up existing test files...")
+        try:
+            # Check input bucket
+            response = s3_client.list_objects_v2(
+                Bucket=args.input_bucket,
+                Prefix="media/"
+            )
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    if "_" in obj['Key'] and obj['Key'].startswith("media/"):
+                        file_name = os.path.basename(args.sample_file)
+                        base_name, _ = os.path.splitext(file_name)
+                        if base_name.split('_')[0] in obj['Key']:
+                            print(f"Deleting old input file: {obj['Key']}")
+                            s3_client.delete_object(Bucket=args.input_bucket, Key=obj['Key'])
+            
+            # Check output bucket
+            response = s3_client.list_objects_v2(
+                Bucket=args.output_bucket,
+                Prefix="transcriptions/"
+            )
+            if 'Contents' in response:
+                for obj in response['Contents']:
+                    if "_" in obj['Key'] and obj['Key'].endswith(".json"):
+                        file_name = os.path.basename(args.sample_file)
+                        base_name, _ = os.path.splitext(file_name)
+                        if base_name.split('_')[0] in obj['Key']:
+                            print(f"Deleting old output file: {obj['Key']}")
+                            s3_client.delete_object(Bucket=args.output_bucket, Key=obj['Key'])
+        except ClientError as e:
+            print(f"⚠️ WARNING: Error during cleanup of existing files: {e}")
+    
     try:
         # Upload the sample file to the input bucket in the media directory
         input_key = upload_file(args.sample_file, args.input_bucket, s3_client, test_id)
         
         # Wait for the transcription to appear in the output bucket
-        output_key = wait_for_transcription(args.output_bucket, input_key, s3_client, args.timeout)
+        output_key = wait_for_transcription(args.output_bucket, input_key, s3_client, args.timeout, test_id)
         
         # Verify the transcription content
         verify_transcription(args.output_bucket, output_key, s3_client)
         
         # Test passed
         print("\n✅ E2E TEST PASSED: Video pipeline is working correctly!")
+        
+        # Clean up test files if requested
+        if args.cleanup:
+            cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
+        
         return 0
     
     except Exception as e:
         print(f"\n❌ E2E TEST FAILED: {e}", file=sys.stderr)
         return 1
+    finally:
+        # Always attempt to clean up if cleanup is enabled, even if test fails
+        if args.cleanup and 'test_id' in locals():
+            cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ TERRAFORM_DIR="$(pwd)/../../../../infra/environments/dev"
 PROJECT_ROOT="$(pwd)/../../../../"
 REQUIREMENTS_FILE="${PROJECT_ROOT}/requirements.txt"
 VENV_DIR="$(pwd)/.venv"
+CLEANUP=false
 
 # Usage information
 function show_usage {
@@ -25,6 +26,7 @@ function show_usage {
     echo "  -t, --timeout SECONDS Timeout in seconds (default: $TIMEOUT_DEFAULT)"
     echo "  -v, --venv DIR        Virtual environment directory (default: $VENV_DIR)"
     echo "  --skip-venv           Skip virtual environment setup"
+    echo "  -c, --cleanup         Clean up test files after completion"
     echo "  -h, --help            Show this help message"
     echo
     exit 1
@@ -34,6 +36,7 @@ function show_usage {
 SAMPLE_FILE=$SAMPLE_FILE_DEFAULT
 TIMEOUT=$TIMEOUT_DEFAULT
 SKIP_VENV=false
+CLEANUP=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -51,6 +54,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --skip-venv)
             SKIP_VENV=true
+            shift
+            ;;
+        -c|--cleanup)
+            CLEANUP=true
             shift
             ;;
         -h|--help)
@@ -161,6 +168,9 @@ echo -e "${GREEN}Input bucket:${NO_COLOR} $INPUT_BUCKET"
 echo -e "${GREEN}Output bucket:${NO_COLOR} $OUTPUT_BUCKET"
 echo -e "${GREEN}Sample file:${NO_COLOR} $SAMPLE_FILE"
 echo -e "${GREEN}Timeout:${NO_COLOR} $TIMEOUT seconds"
+if [ "$CLEANUP" = true ]; then
+    echo -e "${GREEN}Cleanup:${NO_COLOR} Enabled"
+fi
 
 # Check for AWS credentials
 if [[ -z "$AWS_ACCESS_KEY_ID" ]] || [[ -z "$AWS_SECRET_ACCESS_KEY" ]]; then
@@ -177,19 +187,23 @@ echo -e "\n${BOLD}=== Running E2E Test ===${NO_COLOR}\n"
 SCRIPT_PATH="$(dirname "$0")/test_pipeline_e2e.py"
 chmod +x "$SCRIPT_PATH"
 
+# Build command with conditional cleanup flag
+COMMAND_ARGS=(
+    "--input-bucket" "$INPUT_BUCKET"
+    "--output-bucket" "$OUTPUT_BUCKET"
+    "--sample-file" "$SAMPLE_FILE"
+    "--timeout" "$TIMEOUT"
+)
+
+if [ "$CLEANUP" = true ]; then
+    COMMAND_ARGS+=("--cleanup")
+fi
+
 # Run the test script (ensure we use the python from the virtual environment if enabled)
 if [ "$SKIP_VENV" = false ]; then
-    "$VENV_DIR/bin/python" "$SCRIPT_PATH" \
-        --input-bucket "$INPUT_BUCKET" \
-        --output-bucket "$OUTPUT_BUCKET" \
-        --sample-file "$SAMPLE_FILE" \
-        --timeout "$TIMEOUT"
+    "$VENV_DIR/bin/python" "$SCRIPT_PATH" "${COMMAND_ARGS[@]}"
 else
-    "$SCRIPT_PATH" \
-        --input-bucket "$INPUT_BUCKET" \
-        --output-bucket "$OUTPUT_BUCKET" \
-        --sample-file "$SAMPLE_FILE" \
-        --timeout "$TIMEOUT"
+    "$SCRIPT_PATH" "${COMMAND_ARGS[@]}"
 fi
 
 # Check the exit code
