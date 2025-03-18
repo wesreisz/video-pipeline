@@ -32,7 +32,7 @@ graph LR
   - `modules/`: Reusable infrastructure modules
   - `environments/`: Environment-specific configurations
 
-- **projects/**: Individual service implementations
+- **modules/**: Individual service implementations
   - `transcribe-module/`: Service for transcribing audio files
 
 - **libs/**: Shared libraries and code
@@ -96,7 +96,7 @@ To deploy the complete application, follow these steps:
    mkdir -p ./infra/build
    
    # Package the Lambda function code
-   zip -r ./infra/build/transcribe-module.zip ./projects/transcribe-module
+   zip -r ./infra/build/transcribe-module.zip ./modules/transcribe-module
    ```
 
 2. Deploy infrastructure using Terraform

@@ -50,7 +50,7 @@ module "transcribe_lambda" {
   timeout       = 60
   memory_size   = 256
   
-  source_dir  = "../../../projects/transcribe-module/src"
+  source_dir  = "../../../modules/transcribe-module/src"
   output_path = "../../build/transcribe_lambda.zip"
   
   environment_variables = {

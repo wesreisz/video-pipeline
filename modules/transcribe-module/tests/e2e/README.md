@@ -38,7 +38,7 @@ The test script automatically:
 
 1. Creates a Python virtual environment in the `.venv` directory (if it doesn't exist)
 2. Activates the virtual environment
-3. Installs dependencies from the project's root `requirements.txt` file
+3. Installs dependencies from the module's `dev-requirements.txt` file
 4. Uses the virtual environment's Python interpreter to run the test
 
 The main dependencies include:
@@ -52,7 +52,7 @@ The main dependencies include:
 The simplest way to run the test is to navigate to the e2e test directory and run the shell script without arguments:
 
 ```bash
-cd projects/transcribe-module/tests/e2e
+cd modules/transcribe-module/tests/e2e
 ./run_e2e_test.sh
 ```
 
@@ -82,7 +82,7 @@ You can also run the Python script directly with your own parameters, but you ne
 
 ```bash
 # Ensure dependencies are installed
-pip install -r /path/to/project/requirements.txt
+pip install -r ../../dev-requirements.txt
 
 # Run the test
 ./test_pipeline_e2e.py \
@@ -120,7 +120,7 @@ To integrate these tests with CI/CD pipelines:
 
 3. Run the tests as part of your deployment pipeline:
    ```bash
-   cd projects/transcribe-module/tests/e2e
+   cd modules/transcribe-module/tests/e2e
    ./run_e2e_test.sh --timeout 600
    ```
 
@@ -143,7 +143,7 @@ To integrate these tests with CI/CD pipelines:
    - Check permissions on the directory where the virtual environment is created
 
 2. **Dependency Installation Issues**:
-   - Verify that the requirements.txt file is accessible
+   - Verify that the module's dev-requirements.txt file is accessible
    - Check your internet connection for package downloads
    - If behind a proxy, ensure proxy settings are configured
 

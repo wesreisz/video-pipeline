@@ -18,7 +18,7 @@ Create a well-modularized Python AWS Lambda function within our video pipeline p
 Your implementation should follow our established monorepo structure:
 
 ```
-├── projects/
+├── modules/
 │   └── transcribe-module/
 │       ├── specs/           # Add specifications/design docs here
 │       ├── src/             # Lambda function code goes here

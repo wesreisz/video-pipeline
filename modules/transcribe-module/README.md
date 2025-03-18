@@ -26,14 +26,25 @@ The transcription module works as follows:
 
 ### Deployment
 
-1. Install dependencies:
+1. Set up the module-specific virtual environment:
    ```
-   pip install -r requirements.txt
+   cd modules/transcribe-module
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
-2. Deploy to the dev environment:
+2. Install dependencies:
    ```
-   cd infra/environments/dev
+   # For production/runtime dependencies only
+   pip install -r requirements.txt
+   
+   # For development, testing, and code quality tools
+   pip install -r dev-requirements.txt
+   ```
+
+3. Deploy to the dev environment:
+   ```
+   cd ../../../infra/environments/dev
    terraform init
    terraform apply
    ```
@@ -90,7 +101,7 @@ This module supports transcription of the following media types:
 
 Run unit tests:
 ```
-cd projects/transcribe-module
+cd modules/transcribe-module
 python -m unittest discover tests
 ```
 
@@ -129,7 +140,7 @@ This project includes several options for local testing:
 
 2. Run the test script:
    ```
-   python projects/transcribe-module/local_test.py
+   python modules/transcribe-module/local_test.py
    ```
 
 3. Browse S3 content at http://localhost:8000

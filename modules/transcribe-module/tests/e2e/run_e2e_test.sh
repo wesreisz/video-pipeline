@@ -13,7 +13,8 @@ SAMPLE_FILE_DEFAULT="$(pwd)/../../../../samples/hello-my_name_is_wes.mp3"
 TIMEOUT_DEFAULT=300
 TERRAFORM_DIR="$(pwd)/../../../../infra/environments/dev"
 PROJECT_ROOT="$(pwd)/../../../../"
-REQUIREMENTS_FILE="${PROJECT_ROOT}/requirements.txt"
+MODULE_ROOT="$(pwd)/../../"
+REQUIREMENTS_FILE="${MODULE_ROOT}/dev-requirements.txt"
 VENV_DIR="$(pwd)/.venv"
 CLEANUP=false
 

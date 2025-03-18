@@ -102,7 +102,7 @@ After implementation, a user should be able to:
 
 1. Run the test with minimal effort after deployment
    ```
-   cd projects/transcribe-module/tests/e2e
+   cd modules/transcribe-module/tests/e2e
    ./run_e2e_test.sh
    ```
 
@@ -130,7 +130,7 @@ After implementation, a user should be able to:
 
 4. Optionally clean up test files (both input and output)
    ```
-   cd projects/transcribe-module/tests/e2e
+   cd modules/transcribe-module/tests/e2e
    ./run_e2e_test.sh --cleanup
    ```
 
