@@ -1,0 +1,14 @@
+# Test dependencies
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Additional test tools
+pytest-xdist>=3.0.0  # For parallel test execution
+pytest-mock>=3.10.0  # For mocking
+pytest-timeout>=2.1.0  # For test timeouts
+
+# Code quality tools for development
+black>=23.3.0  # Code formatting
+isort>=5.12.0  # Import sorting
+pylint>=2.17.0  # Static code analysis
+mypy>=1.0.0  # Type checking 

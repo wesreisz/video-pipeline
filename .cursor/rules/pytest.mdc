@@ -1,0 +1,73 @@
+---
+description: testing framework for the project
+globs: test_*.py
+alwaysApply: false
+---
+# Pytest Testing Standards
+
+## Overview
+
+This project uses pytest as its exclusive testing framework. All test files must be compatible with pytest discovery and execution patterns.
+
+## Naming Conventions
+
+- All test files must follow this pattern:
+  - `test_*.py`
+- All test functions within these files must be prefixed with `test_`
+- All test classes must be prefixed with `Test`
+
+## Test Directory Structure
+
+- Unit tests should be placed in a `tests/` directory at the same level as the module they're testing
+- Integration tests should be placed in `tests/integration/` directory
+- End-to-end tests are located in the `tests/e2e/` directory
+- Tests that require infrastructure should be placed in `tests/infra/`
+
+## Test Execution
+
+- All tests must be run using pytest
+- Use the following command pattern:
+  ```bash
+  pytest [options] [path_to_tests]
+  ```
+- Common options:
+  - `-v`: verbose output
+  - `-xvs`: exit on first failure, verbose, no capture
+  - `--cov=<module>`: run coverage on specified module
+- To run specific test types:
+  ```bash
+  # Run e2e tests
+  pytest tests/e2e
+  
+  # Run unit tests only
+  pytest tests/ --exclude=tests/e2e --exclude=tests/integration
+  ```
+
+## Fixtures and Configuration
+
+- Use pytest fixtures for test setup and teardown
+- Place shared fixtures in `conftest.py` files
+- Use parametrized tests where appropriate using `@pytest.mark.parametrize`
+
+## CI Integration
+
+- CI pipelines must execute tests using pytest
+- Test reports should be generated in JUnit XML format using `--junitxml=report.xml`
+- Coverage reports should be generated using `--cov-report=xml`
+
+## Best Practices
+
+- Use assertions rather than `assert` statements where possible
+- Group tests by functionality
+- Keep tests independent and idempotent
+- Avoid mocking unnecessarily
+- Use appropriate markers for slow or infrastructure-dependent tests
+
+## Dependencies
+
+- Add test dependencies to `dev-requirements.txt`
+- Minimum required packages:
+  ```
+  pytest>=7.0.0
+  pytest-cov>=4.0.0
+  ```
