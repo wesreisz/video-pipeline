@@ -127,11 +127,69 @@ To deploy the complete application, follow these steps:
 
 ## Testing
 
-Run tests using pytest:
+### Setting Up the Test Environment
 
+1. Navigate to the transcribe module directory:
+   ```bash
+   cd modules/transcribe-module
+   ```
+
+2. Create a virtual environment if it doesn't exist:
+   ```bash
+   python -m venv .venv
+   ```
+
+3. Activate the virtual environment:
+   ```bash
+   # On macOS/Linux:
+   source .venv/bin/activate
+   
+   # On Windows:
+   .venv\Scripts\activate
+   ```
+
+4. Install test dependencies:
+   ```bash
+   pip install -r dev-requirements.txt
+   ```
+
+### Running the Test Suite
+
+Run the complete test suite (unit tests and integration tests):
+```bash
+python -m pytest -v tests/
 ```
-pytest
+
+Run only unit tests:
+```bash
+python -m pytest -v tests/ --exclude=tests/e2e --exclude=tests/integration
 ```
+
+Run only integration tests:
+```bash
+python -m pytest -v tests/integration/
+```
+
+### Running End-to-End Tests
+
+The end-to-end tests verify the entire deployed pipeline on AWS.
+
+1. Navigate to the e2e test directory:
+   ```bash
+   cd tests/e2e
+   ```
+
+2. Run the end-to-end test script:
+   ```bash
+   ./run_e2e_test.sh --cleanup
+   ```
+
+   Options:
+   - `--cleanup`: Clean up test files after completion
+   - `--file PATH`: Specify a custom sample file
+   - `--timeout SECONDS`: Set a custom timeout (default: 300 seconds)
+
+Note: End-to-end tests require active AWS credentials and a deployed infrastructure.
 
 ## Contributing
 
