@@ -19,20 +19,6 @@ class TranscriptionService:
         self.region = os.environ.get('TRANSCRIBE_REGION', 'us-east-1')
         self.transcribe_client = boto3.client('transcribe', region_name=self.region)
         
-    def process_audio(self, bucket, key):
-        """
-        Legacy method for backward compatibility. Simply delegates to process_media.
-        
-        Args:
-            bucket (str): Source S3 bucket name
-            key (str): S3 object key for the audio file
-            
-        Returns:
-            str: The S3 key where the transcription was saved
-        """
-        logger.info(f"process_audio is deprecated, use process_media instead")
-        return self.process_media(bucket, key)
-        
     def process_media(self, bucket, key):
         """
         Process an audio or video file from S3 and generate transcription using AWS Transcribe

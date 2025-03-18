@@ -16,19 +16,6 @@ class TestTranscriptionService(unittest.TestCase):
         self.service.transcribe_client = MagicMock()
         self.service.output_bucket = 'test-output-bucket'
     
-    @patch('boto3.client')
-    def test_process_audio_legacy(self, mock_boto_client):
-        """Test that the legacy process_audio method calls process_media"""
-        # Setup mock
-        self.service.process_media = MagicMock(return_value='transcriptions/test_audio.json')
-        
-        # Call the legacy method
-        result = self.service.process_audio('test-bucket', 'audio/test_audio.mp3')
-        
-        # Verify it calls the new method
-        self.service.process_media.assert_called_once_with('test-bucket', 'audio/test_audio.mp3')
-        self.assertEqual(result, 'transcriptions/test_audio.json')
-    
     @patch('time.sleep', return_value=None)
     @patch('uuid.uuid4', return_value='test-uuid')
     def test_process_media_audio(self, mock_uuid, mock_sleep):
