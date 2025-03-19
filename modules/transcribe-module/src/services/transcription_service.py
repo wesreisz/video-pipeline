@@ -5,19 +5,141 @@ import tempfile
 import boto3
 import uuid
 import time
+from abc import ABC, abstractmethod
 from models.transcription_result import TranscriptionResult
 from utils.s3_utils import S3Utils
 
 logger = logging.getLogger()
 
+class TranscriptionStrategy(ABC):
+    """Abstract base class for transcription strategies"""
+    
+    @abstractmethod
+    def process_transcription(self, job_name, output_bucket, s3_utils):
+        """
+        Process a completed transcription job and extract results
+        
+        Args:
+            job_name (str): The transcription job name
+            output_bucket (str): The S3 bucket containing transcription output
+            s3_utils (S3Utils): Utility for S3 operations
+            
+        Returns:
+            tuple: (transcription_text, word_segments, audio_segments)
+        """
+        pass
+
+class AWSTranscribeStrategy(TranscriptionStrategy):
+    """Strategy for processing AWS Transcribe output"""
+    
+    def process_transcription(self, job_name, output_bucket, s3_utils):
+        """
+        Process AWS Transcribe output and extract transcription data
+        
+        Args:
+            job_name (str): The AWS Transcribe job name
+            output_bucket (str): The S3 bucket containing transcription output
+            s3_utils (S3Utils): Utility for S3 operations
+            
+        Returns:
+            tuple: (transcription_text, word_segments, audio_segments)
+        """
+        logger.info(f"Processing transcription results for job {job_name}")
+        
+        # Get transcript from the output file
+        transcript_file_key = f"raw_transcriptions/{job_name}.json"
+        transcript_json = s3_utils.download_json(output_bucket, transcript_file_key)
+        
+        # Extract transcript text from AWS Transcribe output format
+        results = transcript_json.get('results', {})
+        transcription_text = results.get('transcripts', [{}])[0].get('transcript', '')
+        
+        # Extract word-level segments (items) with timestamps
+        segments = results.get('items', [])
+        
+        # Extract sentence-level audio segments if available
+        audio_segments = results.get('audio_segments', [])
+        
+        # Process word-level segments if exists
+        processed_segments = []
+        if segments:
+            logger.info(f"Extracted {len(segments)} word-level segments from transcription")
+            
+            # We're only keeping the essential information from each segment
+            for segment in segments:
+                if segment.get('type') in ['pronunciation', 'punctuation']:
+                    processed_segment = {
+                        'type': segment.get('type'),
+                        'content': segment.get('alternatives', [{}])[0].get('content', ''),
+                        'start_time': segment.get('start_time'),
+                        'end_time': segment.get('end_time'),
+                        'confidence': segment.get('alternatives', [{}])[0].get('confidence', '0')
+                    }
+                    processed_segments.append(processed_segment)
+            
+            logger.info(f"Processed {len(processed_segments)} word-level segments")
+        
+        # Process sentence-level audio segments if exists
+        processed_audio_segments = []
+        if audio_segments:
+            logger.info(f"Extracted {len(audio_segments)} sentence-level audio segments from transcription")
+            
+            # Process each sentence-level segment
+            for segment in audio_segments:
+                processed_audio_segment = {
+                    'id': segment.get('id'),
+                    'transcript': segment.get('transcript', ''),
+                    'start_time': segment.get('start_time'),
+                    'end_time': segment.get('end_time'),
+                    'items': segment.get('items', [])
+                }
+                processed_audio_segments.append(processed_audio_segment)
+            
+            logger.info(f"Processed {len(processed_audio_segments)} sentence-level audio segments")
+        
+        # Return both transcription text and processed segments
+        return transcription_text, processed_segments, processed_audio_segments
+
+
+class TranscriptionStrategyFactory:
+    """Factory for creating transcription strategies"""
+    
+    @staticmethod
+    def create_strategy(provider='aws'):
+        """
+        Create a transcription strategy based on provider
+        
+        Args:
+            provider (str): The transcription provider ('aws', etc.)
+            
+        Returns:
+            TranscriptionStrategy: Strategy instance for the provider
+        """
+        if provider.lower() == 'aws':
+            return AWSTranscribeStrategy()
+        else:
+            logger.warning(f"Unknown provider '{provider}', defaulting to AWS")
+            return AWSTranscribeStrategy()
+
+
 class TranscriptionService:
     """Service to handle audio and video transcription logic using AWS Transcribe"""
     
-    def __init__(self):
+    def __init__(self, strategy_provider='aws'):
         self.s3_utils = S3Utils()
         self.output_bucket = os.environ.get('TRANSCRIPTION_OUTPUT_BUCKET')
         self.region = os.environ.get('TRANSCRIBE_REGION', 'us-east-1')
         self.transcribe_client = boto3.client('transcribe', region_name=self.region)
+        self.strategy = TranscriptionStrategyFactory.create_strategy(strategy_provider)
+        
+    def set_strategy(self, strategy):
+        """
+        Set the transcription strategy
+        
+        Args:
+            strategy (TranscriptionStrategy): The strategy to use
+        """
+        self.strategy = strategy
         
     def process_media(self, bucket, key):
         """
@@ -119,59 +241,8 @@ class TranscriptionService:
             if status == 'COMPLETED':
                 logger.info(f"Transcription job {job_name} completed successfully")
                 
-                # Get transcript from the output file
-                transcript_file_key = f"raw_transcriptions/{job_name}.json"
-                transcript_json = self.s3_utils.download_json(self.output_bucket, transcript_file_key)
-                
-                # Extract transcript text from AWS Transcribe output format
-                results = transcript_json.get('results', {})
-                transcription_text = results.get('transcripts', [{}])[0].get('transcript', '')
-                
-                # Extract word-level segments (items) with timestamps
-                segments = results.get('items', [])
-                
-                # Extract sentence-level audio segments if available
-                audio_segments = results.get('audio_segments', [])
-                
-                # Process word-level segments if exists
-                processed_segments = []
-                if segments:
-                    logger.info(f"Extracted {len(segments)} word-level segments from transcription")
-                    
-                    # We're only keeping the essential information from each segment
-                    for segment in segments:
-                        if segment.get('type') in ['pronunciation', 'punctuation']:
-                            processed_segment = {
-                                'type': segment.get('type'),
-                                'content': segment.get('alternatives', [{}])[0].get('content', ''),
-                                'start_time': segment.get('start_time'),
-                                'end_time': segment.get('end_time'),
-                                'confidence': segment.get('alternatives', [{}])[0].get('confidence', '0')
-                            }
-                            processed_segments.append(processed_segment)
-                    
-                    logger.info(f"Processed {len(processed_segments)} word-level segments")
-                
-                # Process sentence-level audio segments if exists
-                processed_audio_segments = []
-                if audio_segments:
-                    logger.info(f"Extracted {len(audio_segments)} sentence-level audio segments from transcription")
-                    
-                    # Process each sentence-level segment
-                    for segment in audio_segments:
-                        processed_audio_segment = {
-                            'id': segment.get('id'),
-                            'transcript': segment.get('transcript', ''),
-                            'start_time': segment.get('start_time'),
-                            'end_time': segment.get('end_time'),
-                            'items': segment.get('items', [])
-                        }
-                        processed_audio_segments.append(processed_audio_segment)
-                    
-                    logger.info(f"Processed {len(processed_audio_segments)} sentence-level audio segments")
-                
-                # Return both transcription text and processed segments
-                return transcription_text, processed_segments, processed_audio_segments
+                # Use the selected strategy to process the transcription result
+                return self.strategy.process_transcription(job_name, self.output_bucket, self.s3_utils)
             
             elif status == 'FAILED':
                 error_message = response['TranscriptionJob'].get('FailureReason', 'Unknown error')

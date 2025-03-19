@@ -20,12 +20,22 @@ BUILD_DIR="$INFRA_DIR/build"
 MODULES_DIR="$PROJECT_ROOT/modules"
 TRANSCRIBE_MODULE_DIR="$MODULES_DIR/transcribe-module"
 CHUNKING_MODULE_DIR="$MODULES_DIR/chunking-module"
+SHARED_LIBS_DIR="$MODULES_DIR/shared_libs"
 TRANSCRIBE_VENV_DIR="$TRANSCRIBE_MODULE_DIR/.venv"
 CHUNKING_VENV_DIR="$CHUNKING_MODULE_DIR/.venv"
 
 # Display header
 echo -e "${BOLD}===== Video Pipeline Dev Deployment Script =====${NO_COLOR}"
 echo -e "${YELLOW}Project root: ${PROJECT_ROOT}${NO_COLOR}"
+
+# Function to check if shared_libs requirements.txt exists, create if not
+ensure_shared_libs_requirements() {
+    if [ ! -f "$SHARED_LIBS_DIR/requirements.txt" ]; then
+        echo -e "\n${YELLOW}Creating requirements.txt for shared_libs...${NO_COLOR}"
+        echo "boto3>=1.26.0" > "$SHARED_LIBS_DIR/requirements.txt"
+        echo "# Add other dependencies as needed" >> "$SHARED_LIBS_DIR/requirements.txt"
+    fi
+}
 
 # Function to activate virtual environment for transcribe module
 activate_transcribe_venv() {
@@ -41,6 +51,12 @@ activate_transcribe_venv() {
     echo -e "\n${YELLOW}Installing dependencies for transcribe module...${NO_COLOR}"
     pip install -q -r "$TRANSCRIBE_MODULE_DIR/requirements.txt"
     pip install -q -r "$TRANSCRIBE_MODULE_DIR/dev-requirements.txt"
+    
+    # Also install shared_libs dependencies
+    if [ -f "$SHARED_LIBS_DIR/requirements.txt" ]; then
+        echo -e "\n${YELLOW}Installing shared_libs dependencies...${NO_COLOR}"
+        pip install -q -r "$SHARED_LIBS_DIR/requirements.txt"
+    fi
 }
 
 # Function to activate virtual environment for chunking module
@@ -57,6 +73,12 @@ activate_chunking_venv() {
     echo -e "\n${YELLOW}Installing dependencies for chunking module...${NO_COLOR}"
     pip install -q -r "$CHUNKING_MODULE_DIR/requirements.txt"
     pip install -q -r "$CHUNKING_MODULE_DIR/dev-requirements.txt"
+    
+    # Also install shared_libs dependencies
+    if [ -f "$SHARED_LIBS_DIR/requirements.txt" ]; then
+        echo -e "\n${YELLOW}Installing shared_libs dependencies...${NO_COLOR}"
+        pip install -q -r "$SHARED_LIBS_DIR/requirements.txt"
+    fi
 }
 
 # Function to run tests for transcribe module
@@ -99,14 +121,20 @@ build_lambda_packages() {
     # Create a zip package for the transcribe Lambda function
     echo -e "\n${YELLOW}Creating transcribe module zip package...${NO_COLOR}"
     cd "$PROJECT_ROOT"
-    zip -r "$BUILD_DIR/transcribe_lambda.zip" "modules/transcribe-module/src/"
+    
+    # Include shared_libs in the transcribe module package
+    echo -e "\n${YELLOW}Including shared_libs in transcribe module package...${NO_COLOR}"
+    zip -r "$BUILD_DIR/transcribe_lambda.zip" "modules/transcribe-module/src/" "modules/shared_libs/"
     
     echo -e "\n${GREEN}Transcribe Lambda package built successfully: ${BUILD_DIR}/transcribe_lambda.zip${NO_COLOR}"
     
     # Create a zip package for the chunking Lambda function
     echo -e "\n${YELLOW}Creating chunking module zip package...${NO_COLOR}"
     cd "$PROJECT_ROOT"
-    zip -r "$BUILD_DIR/chunking_lambda.zip" "modules/chunking-module/src/"
+    
+    # Include shared_libs in the chunking module package
+    echo -e "\n${YELLOW}Including shared_libs in chunking module package...${NO_COLOR}"
+    zip -r "$BUILD_DIR/chunking_lambda.zip" "modules/chunking-module/src/" "modules/shared_libs/"
     
     echo -e "\n${GREEN}Chunking Lambda package built successfully: ${BUILD_DIR}/chunking_lambda.zip${NO_COLOR}"
 }

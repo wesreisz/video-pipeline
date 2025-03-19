@@ -1,0 +1,54 @@
+{
+  "original_file": "sample.mp3",
+  "transcription_text": "This is a sample transcription for testing the chunking module. It includes audio segments that represent sentences or logical divisions in the audio.",
+  "timestamp": "2025-03-19T09:19:37.764008",
+  "job_name": "test-job-5f579a91-62be-4995-98b8-a73772a84f1e",
+  "media_type": "audio",
+  "segments": [
+    {
+      "start_time": 0.0,
+      "end_time": 2.5,
+      "text": "This is"
+    },
+    {
+      "start_time": 2.5,
+      "end_time": 5.0,
+      "text": "a sample transcription"
+    },
+    {
+      "start_time": 5.0,
+      "end_time": 7.5,
+      "text": "for testing the chunking module."
+    },
+    {
+      "start_time": 7.5,
+      "end_time": 10.0,
+      "text": "It includes audio segments"
+    },
+    {
+      "start_time": 10.0,
+      "end_time": 15.0,
+      "text": "that represent sentences or logical divisions in the audio."
+    }
+  ],
+  "audio_segments": [
+    {
+      "start_time": 0.0,
+      "end_time": 5.0,
+      "text": "This is a sample transcription",
+      "confidence": 0.95
+    },
+    {
+      "start_time": 5.0,
+      "end_time": 10.0,
+      "text": "for testing the chunking module. It includes audio segments",
+      "confidence": 0.92
+    },
+    {
+      "start_time": 10.0,
+      "end_time": 15.0,
+      "text": "that represent sentences or logical divisions in the audio.",
+      "confidence": 0.88
+    }
+  ]
+}
