@@ -40,17 +40,6 @@ module "transcription_bucket" {
   }
 }
 
-# Chunking output bucket
-module "chunking_bucket" {
-  source = "../../modules/s3"
-  
-  bucket_name = "dev-media-chunking-output"
-  tags = {
-    Environment = "dev"
-    Project     = "chunking-module"
-  }
-}
-
 # Lambda function for transcription
 module "transcribe_lambda" {
   source = "../../modules/lambda"
@@ -96,12 +85,11 @@ module "chunking_lambda" {
   output_path = "../../build/chunking_lambda.zip"
   
   environment_variables = {
-    CHUNKING_OUTPUT_BUCKET = module.chunking_bucket.bucket_id
+    CHUNKING_OUTPUT_BUCKET = "placeholder-bucket"
   }
   
   s3_bucket_arns = [
-    module.transcription_bucket.bucket_arn,
-    module.chunking_bucket.bucket_arn
+    module.transcription_bucket.bucket_arn
   ]
   
   tags = {
@@ -435,10 +423,6 @@ output "media_bucket_name" {
 
 output "transcription_bucket_name" {
   value = module.transcription_bucket.bucket_id
-}
-
-output "chunking_bucket_name" {
-  value = module.chunking_bucket.bucket_id
 }
 
 output "transcribe_lambda_function_name" {

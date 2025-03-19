@@ -24,11 +24,6 @@ class ChunkingService:
             str: Output key where the chunking results are stored
         """
         logger.info(f"Hello World from Chunking Service!")
-        logger.info(f"Received request to process: {bucket}/{key}")
         
-        # Just return a fixed output key for now - no actual processing
-        output_filename = os.path.basename(key)
-        if output_filename.endswith('.json'):
-            output_filename = output_filename[:-5]
-        
-        return f"chunks/{output_filename}-chunks.json" 
+        # Return a placeholder since we're no longer processing anything
+        return "placeholder-result" 

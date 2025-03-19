@@ -15,7 +15,7 @@ NO_COLOR="\033[0m"
 
 # Configuration
 TRANSCRIPTION_BUCKET="dev-media-transcribe-output"
-CHUNKING_BUCKET="dev-media-chunking-output"
+CHUNKING_BUCKET="placeholder-bucket"
 TEST_FILE="test_transcription.json"
 TEST_KEY="transcriptions/${TEST_FILE}"
 EXPECTED_OUTPUT_KEY="chunks/${TEST_FILE%.json}-chunks.json"

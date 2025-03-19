@@ -88,7 +88,7 @@ def create_s3_event(bucket, key):
 def main():
     """Main function to run the local test."""
     # Set up test environment
-    os.environ["CHUNKING_OUTPUT_BUCKET"] = "dev-media-chunking-output"
+    os.environ["CHUNKING_OUTPUT_BUCKET"] = "placeholder-bucket"
     
     # 1. Create a test transcription file
     print("Creating test transcription file...")
