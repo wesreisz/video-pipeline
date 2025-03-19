@@ -88,7 +88,7 @@ If you prefer to deploy manually, follow these steps:
 
 6. Validate the deployment using the end-to-end test:
    ```
-   cd ../../../modules/transcribe-module/tests/e2e
+   cd ../../../tests/e2e
    ./run_e2e_test.sh --cleanup
    ```
 
@@ -164,17 +164,21 @@ make unit-tests
 
 ### End-to-End Tests
 
-To validate the full pipeline after deployment:
+End-to-end tests have been consolidated at the project level. To validate the full pipeline after deployment:
+
 ```bash
-cd modules/transcribe-module/tests/e2e
+cd ../../../tests/e2e
 ./run_e2e_test.sh --cleanup
 ```
 
-This script will:
+This consolidated test script will:
 1. Upload a sample audio file to the input bucket
 2. Wait for the transcription to complete
 3. Verify the transcription results
-4. Clean up test files (if --cleanup flag is provided)
+4. Validate the chunking process
+5. Clean up test files (if --cleanup flag is provided)
+
+For more details, see the project-level README and the documentation in the `tests/e2e` directory.
 
 ### Local Integration Testing
 

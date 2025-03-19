@@ -31,9 +31,30 @@ class S3Utils:
             str: Path to the downloaded file
         """
         logger.info(f"Downloading {bucket}/{key} to {local_path}")
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        self.s3_client.download_file(bucket, key, local_path)
-        return local_path
+        
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            
+            # Use get_object instead of download_file for better control
+            response = self.s3_client.get_object(Bucket=bucket, Key=key)
+            content = response['Body'].read().decode('utf-8')
+            
+            # Write the content to a local file
+            with open(local_path, 'w') as f:
+                f.write(content)
+                
+            logger.info(f"Successfully downloaded {bucket}/{key} to {local_path}")
+            return local_path
+            
+        except Exception as e:
+            logger.error(f"Error downloading file from S3: {str(e)}")
+            # Add more detailed error information for debugging
+            if 'NoSuchKey' in str(e):
+                logger.error(f"The file {key} does not exist in bucket {bucket}")
+            elif 'AccessDenied' in str(e):
+                logger.error(f"Access denied to file {key} in bucket {bucket}. Check IAM permissions.")
+            raise
         
     def upload_file(self, local_path, bucket, key):
         """
@@ -71,4 +92,25 @@ class S3Utils:
             Key=key,
             ContentType='application/json'
         )
-        return f"s3://{bucket}/{key}" 
+        return f"s3://{bucket}/{key}"
+        
+    def download_json(self, bucket, key):
+        """
+        Download and parse a JSON file from S3
+        
+        Args:
+            bucket (str): S3 bucket name
+            key (str): S3 object key of JSON file
+            
+        Returns:
+            dict: Parsed JSON content
+        """
+        logger.info(f"Downloading and parsing JSON from s3://{bucket}/{key}")
+        
+        try:
+            response = self.s3_client.get_object(Bucket=bucket, Key=key)
+            content = response['Body'].read().decode('utf-8')
+            return json.loads(content)
+        except Exception as e:
+            logger.error(f"Error downloading JSON from S3: {str(e)}")
+            raise 

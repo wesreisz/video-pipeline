@@ -6,6 +6,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.error_handler import handle_error
 from services.chunking_service import ChunkingService
+from utils.s3_utils import S3Utils
 
 # Configure logging
 logger = logging.getLogger()
@@ -51,11 +52,47 @@ def lambda_handler(event, context):
                 # Initialize service
                 chunking_service = ChunkingService()
                 
-                # Process the transcription file
-                output_key = chunking_service.process_media(source_bucket, source_key)
+                try:
+                    # Process the transcription file - now returns a dict with segments
+                    segments_dict = chunking_service.process_media(source_bucket, source_key)
+                except FileNotFoundError as e:
+                    logger.error(f"File not found error: {str(e)}")
+                    logger.info("Attempting direct S3 access as a fallback...")
+                    
+                    # Try direct S3 access as a fallback
+                    try:
+                        # Initialize S3Utils
+                        s3_utils = S3Utils()
+                        
+                        # Download the transcription JSON directly
+                        transcription_data = s3_utils.download_json(source_bucket, source_key)
+                        
+                        # If successful, create a simplified segments dictionary
+                        audio_segments = transcription_data.get('audio_segments', [])
+                        
+                        # Create a basic segments dictionary
+                        segments_dict = {
+                            "segments_count": len(audio_segments),
+                            "segments": audio_segments,
+                            "total_duration": sum(
+                                float(segment.get("end_time", 0)) - float(segment.get("start_time", 0))
+                                for segment in audio_segments
+                            )
+                        }
+                        
+                        logger.info(f"Successfully accessed transcription directly from S3: {len(audio_segments)} segments found")
+                    except Exception as s3_error:
+                        logger.error(f"Direct S3 access also failed: {str(s3_error)}")
+                        raise e  # Re-raise the original error
                 
-                # Get the output bucket from environment variable
-                output_bucket = os.environ.get('CHUNKING_OUTPUT_BUCKET')
+                # Log a summary of what we processed
+                logger.info(f"CHUNKING SUMMARY: Processed file {source_key} and found {segments_dict.get('segments_count', 0)} segments")
+                logger.info("Chunking details are logged to CloudWatch instead of writing to a bucket")
+                
+                # Get RequestId for easier log searching
+                request_id = "unknown"
+                if context:
+                    request_id = getattr(context, 'aws_request_id', 'unknown')
                 
                 return {
                     'statusCode': 200,
@@ -63,8 +100,10 @@ def lambda_handler(event, context):
                         'message': 'Chunking completed successfully',
                         'source_bucket': source_bucket,
                         'source_file': source_key,
-                        'output_bucket': output_bucket,
-                        'output_key': output_key
+                        'segments_count': segments_dict.get('segments_count', 0),
+                        'total_duration': segments_dict.get('total_duration', 0),
+                        'log_request_id': request_id,
+                        'note': 'Chunking details are logged to CloudWatch instead of writing to a bucket'
                     })
                 }
         

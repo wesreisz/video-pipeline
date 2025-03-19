@@ -206,6 +206,8 @@ python -m pytest -v tests/integration/
 
 The end-to-end tests verify the entire deployed pipeline on AWS.
 
+> **Note:** All module-level end-to-end tests have been consolidated into a single project-level test that validates the entire pipeline, including all modules.
+
 1. Navigate to the e2e test directory:
    ```bash
    cd tests/e2e
@@ -220,6 +222,9 @@ The end-to-end tests verify the entire deployed pipeline on AWS.
    - `--cleanup`: Clean up test files after completion
    - `--file PATH`: Specify a custom sample file
    - `--timeout SECONDS`: Set a custom timeout (default: 300 seconds)
+   - `--input-bucket BUCKET`: Specify the input S3 bucket
+   - `--output-bucket BUCKET`: Specify the output S3 bucket
+   - `--venv PATH`: Use a specific virtual environment
 
 Note: End-to-end tests require active AWS credentials and a deployed infrastructure.
 

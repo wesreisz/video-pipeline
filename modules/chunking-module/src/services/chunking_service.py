@@ -43,9 +43,19 @@ class ChunkingService:
             key: S3 key for the transcription file
             
         Returns:
-            str: Output key where the chunking results are stored
+            Dict: Dictionary containing the processed segments
         """
         logger.info(f"Processing transcription from s3://{bucket}/{key}")
+        
+        # Extract test_id from the key if present
+        test_id = None
+        if '_' in key:
+            filename = os.path.basename(key)
+            parts = filename.split('_')
+            if len(parts) > 1:
+                # Assume the last part before the extension is the test_id
+                test_id = parts[-1].split('.')[0]
+                logger.info(f"Detected test_id: {test_id}")
         
         # Load audio segments from the transcription file
         audio_segments = self.transcription_loader.get_audio_segments(bucket, key)
@@ -53,11 +63,46 @@ class ChunkingService:
         # Convert audio segments to a dictionary for further processing
         segments_dict = self._convert_segments_to_dict(audio_segments)
         
+        # Log detailed information about the segments instead of writing to a bucket
+        self._log_segments_details(segments_dict, test_id)
+        
         logger.info(f"Processed {len(audio_segments)} audio segments")
         
-        # You can add additional processing here if needed
-        
         return segments_dict
+    
+    def _log_segments_details(self, segments_dict: Dict[str, Any], test_id: str = None):
+        """
+        Log detailed information about the segments to CloudWatch.
+        
+        Args:
+            segments_dict: Dictionary containing segmented data
+            test_id: Optional test ID for filtering logs
+        """
+        segments_count = segments_dict.get("segments_count", 0)
+        total_duration = segments_dict.get("total_duration", 0)
+        
+        # Log summary information
+        logger.info(f"CHUNK PROCESSING SUMMARY - TestID: {test_id}")
+        logger.info(f"CHUNK COUNT: {segments_count}")
+        logger.info(f"CHUNK TOTAL DURATION: {total_duration:.2f} seconds")
+        
+        # Log information about each segment
+        segments = segments_dict.get("segments", [])
+        logger.info(f"CHUNK DETAILS - {segments_count} segments found:")
+        
+        for i, segment in enumerate(segments):
+            # Convert string time values to float
+            start_time = float(segment.get("start_time", 0)) if isinstance(segment.get("start_time"), str) else segment.get("start_time", 0)
+            end_time = float(segment.get("end_time", 0)) if isinstance(segment.get("end_time"), str) else segment.get("end_time", 0)
+            text = segment.get("text", segment.get("transcript", ""))
+            confidence = segment.get("confidence", "N/A")
+            
+            logger.info(f"CHUNK[{i+1}]: {start_time:.2f}s - {end_time:.2f}s (Duration: {end_time-start_time:.2f}s)")
+            logger.info(f"CHUNK[{i+1}] TEXT: \"{text}\"")
+            logger.info(f"CHUNK[{i+1}] CONFIDENCE: {confidence}")
+        
+        # Log a marker for easy searching in CloudWatch
+        logger.info(f"CHUNKING COMPLETE - TestID: {test_id}")
     
     def _convert_segments_to_dict(self, audio_segments: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
@@ -77,7 +122,7 @@ class ChunkingService:
         # Extract additional metadata if needed
         if audio_segments:
             result["total_duration"] = sum(
-                segment.get("end_time", 0) - segment.get("start_time", 0) 
+                float(segment.get("end_time", 0)) - float(segment.get("start_time", 0))
                 for segment in audio_segments
             )
             
@@ -100,6 +145,11 @@ class ChunkingService:
         
         # Convert audio segments to a dictionary
         segments_dict = self._convert_segments_to_dict(audio_segments)
+        
+        # Log detailed information about the segments
+        filename = os.path.basename(file_path)
+        test_id = f"local-{filename.split('.')[0]}"
+        self._log_segments_details(segments_dict, test_id)
         
         logger.info(f"Processed {len(audio_segments)} audio segments from local file")
         
