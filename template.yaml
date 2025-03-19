@@ -17,7 +17,7 @@ Resources:
         Variables:
           TRANSCRIPTION_OUTPUT_BUCKET: test-transcription-output
       Events:
-        S3Event:
+        S3EventAudio:
           Type: S3
           Properties:
             Bucket:
@@ -28,6 +28,17 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .mp3
+        S3EventVideo:
+          Type: S3
+          Properties:
+            Bucket:
+              Ref: InputBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .mp4
       Policies:
         - S3ReadPolicy:
             BucketName: !Ref InputBucket
