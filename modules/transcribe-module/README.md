@@ -27,6 +27,29 @@ The transcription module works as follows:
 
 ### Deployment
 
+#### Option 1: Using the Automated Deployment Script (Recommended)
+
+The project includes an automated deployment script that handles all the steps required to build, test, and deploy the module to the dev environment:
+
+```bash
+# Navigate to the dev environment directory
+cd infra/environments/dev
+
+# Run the deployment script
+./deploy.sh
+```
+
+The script will:
+1. Set up the necessary Python environment
+2. Run tests to validate the code
+3. Build the Lambda deployment package
+4. Deploy the infrastructure using Terraform
+5. Run an end-to-end test to verify the deployment was successful
+
+#### Option 2: Manual Deployment
+
+If you prefer to deploy manually, follow these steps:
+
 1. Set up the module-specific virtual environment:
    ```
    cd modules/transcribe-module
@@ -43,11 +66,30 @@ The transcription module works as follows:
    pip install -r dev-requirements.txt
    ```
 
-3. Deploy to the dev environment:
+3. Run tests to validate the code:
    ```
-   cd ../../../infra/environments/dev
+   python -m pytest -xvs tests/
+   ```
+
+4. Build the Lambda deployment package:
+   ```
+   mkdir -p ../../infra/build
+   cd ../..
+   zip -r infra/build/transcribe_lambda.zip modules/transcribe-module/src/
+   ```
+
+5. Deploy to the dev environment:
+   ```
+   cd infra/environments/dev
    terraform init
-   terraform apply
+   terraform plan -out=tfplan
+   terraform apply "tfplan"
+   ```
+
+6. Validate the deployment using the end-to-end test:
+   ```
+   cd ../../../modules/transcribe-module/tests/e2e
+   ./run_e2e_test.sh --cleanup
    ```
 
 ### Usage
@@ -98,18 +140,41 @@ This module supports transcription of the following media types:
 
 ## Testing
 
-### Unit Tests
+### Unit and Integration Tests
 
-Run unit tests:
+Run tests using pytest (recommended):
+```bash
+cd modules/transcribe-module
+# Activate virtual environment
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+# Run tests with pytest
+python -m pytest -xvs tests/
 ```
+
+Alternative: Run tests using unittest:
+```bash
 cd modules/transcribe-module
 python -m unittest discover tests
 ```
 
 Or use the Makefile from the project root:
-```
+```bash
 make unit-tests
 ```
+
+### End-to-End Tests
+
+To validate the full pipeline after deployment:
+```bash
+cd modules/transcribe-module/tests/e2e
+./run_e2e_test.sh --cleanup
+```
+
+This script will:
+1. Upload a sample audio file to the input bucket
+2. Wait for the transcription to complete
+3. Verify the transcription results
+4. Clean up test files (if --cleanup flag is provided)
 
 ### Local Integration Testing
 
@@ -118,48 +183,37 @@ This project includes several options for local testing:
 #### Option 1: Using the provided helper script
 
 1. Start LocalStack in the background:
-   ```
+   ```bash
    make start-localstack
    ```
 
 2. Run the local test script:
-   ```
+   ```bash
    make test-local
    ```
 
 3. When done, stop LocalStack:
-   ```
+   ```bash
    make stop-localstack
    ```
 
 #### Option 2: Using Docker Compose
 
 1. Start all services:
-   ```
+   ```bash
    docker-compose up -d
    ```
 
 2. Run the test script:
-   ```
+   ```bash
    python modules/transcribe-module/local_test.py
    ```
 
 3. Browse S3 content at http://localhost:8000
 
 4. Stop all services:
-   ```
+   ```bash
    docker-compose down
-   ```
-
-#### Option 3: AWS SAM CLI
-
-For more advanced local Lambda testing with AWS SAM:
-
-1. Install AWS SAM CLI
-2. Create a template.yaml file in the project root
-3. Run:
-   ```
-   sam local invoke -e events/s3-event.json
    ```
 
 ## Environment Variables
@@ -176,10 +230,11 @@ The Lambda function uses the following environment variables:
 - **Lambda timeout**: Increase the timeout value in the Terraform configuration.
 - **Transcribe job failures**: Check the CloudWatch logs for the Lambda function and the Transcribe service console.
 - **Unsupported media format**: Check that your file format is in the list of supported formats above.
+- **Deployment issues**: If you encounter issues during deployment, check the logs from the deploy.sh script. You can also try the manual deployment steps to isolate the problem.
 
 ## Contributing
 
-Follow the project's code style and ensure that tests pass before submitting pull requests.
+Follow the project's code style and ensure that tests pass before submitting pull requests. Always use the deploy.sh script to verify your changes work in the dev environment.
 
 ## Transcription Result Format
 
