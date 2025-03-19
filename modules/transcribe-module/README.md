@@ -12,6 +12,7 @@ The transcription module works as follows:
    - Starts an AWS Transcribe job for the media file
    - Waits for the transcription job to complete
    - Extracts the transcription text from the AWS Transcribe output
+   - Processes both word-level segments and sentence-level audio segments
    - Uploads the transcription result to the output bucket as JSON
 
 ## Getting Started
@@ -179,3 +180,54 @@ The Lambda function uses the following environment variables:
 ## Contributing
 
 Follow the project's code style and ensure that tests pass before submitting pull requests.
+
+## Transcription Result Format
+
+The transcription results are stored as JSON files in the output S3 bucket with the following structure:
+
+```json
+{
+  "original_file": "path/to/original.mp3",
+  "transcription_text": "Full transcription text",
+  "timestamp": "2023-04-01T12:00:00",
+  "job_name": "transcribe-abc123",
+  "media_type": "audio",
+  "segments": [
+    {
+      "type": "pronunciation",
+      "content": "Word",
+      "start_time": "0.0",
+      "end_time": "0.5",
+      "confidence": "0.98"
+    },
+    // More word-level segments
+  ],
+  "audio_segments": [
+    {
+      "id": 0,
+      "transcript": "Complete sentence text.",
+      "start_time": "0.0",
+      "end_time": "2.5",
+      "items": [0, 1, 2, 3, 4]
+    },
+    // More sentence-level segments
+  ]
+}
+```
+
+### Field Descriptions
+
+- `original_file`: Path to the original audio or video file
+- `transcription_text`: The complete transcribed text
+- `timestamp`: ISO-formatted timestamp of when the transcription was created
+- `job_name`: AWS Transcribe job name
+- `media_type`: Type of media ('audio' or 'video')
+- `segments`: List of time-stamped word-level segments from the transcription
+- `audio_segments`: List of sentence-level audio segments, each containing:
+  - `id`: Sentence identifier
+  - `transcript`: The complete sentence text
+  - `start_time`: Start time of the sentence in seconds
+  - `end_time`: End time of the sentence in seconds
+  - `items`: References to the word-level segment IDs that make up this sentence
+
+For more detailed information on the sentence-level audio segments feature, see the [documentation](docs/sentence-level-segments.md).

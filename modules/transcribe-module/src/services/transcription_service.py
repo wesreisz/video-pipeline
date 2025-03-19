@@ -37,28 +37,21 @@ class TranscriptionService:
         file_uri = f"s3://{bucket}/{key}"
         
         # Determine if the file is audio or video based on extension
-        # Start transcription job
-        extension = os.path.splitext(key)[1][1:].lower()  # Get file extension without dot
+        extension = os.path.splitext(key)[1][1:].lower()
         
-        # Determine media format based on file extension
-        if extension in ['mp3', 'mp4', 'wav', 'wave', 'flac', 'ogg', 'amr', 'webm']:
-            if extension == 'mp4' or extension == 'webm':
-                media_type = 'video'
-                media_format = extension
-            else:
-                media_type = 'audio'
-                # Normalize audio format names for AWS Transcribe
-                if extension in ['wav', 'wave']:
-                    media_format = 'wav'
-                else:
-                    media_format = extension
-        else:
-            # Default assumption if unknown extension
-            logger.warning(f"Unknown file extension: {extension}, defaulting to mp3 audio format")
+        # Set media format and type based on file extension
+        media_format = extension
+        
+        # Determine if it's audio or video based on the extension
+        if extension in ['mp3', 'wav', 'flac', 'ogg', 'amr']:
             media_type = 'audio'
-            media_format = 'mp3'
+        elif extension in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
+            media_type = 'video'
+        else:
+            logger.warning(f"Unsupported file extension: {extension}, defaulting to audio")
+            media_type = 'audio'
             
-        logger.info(f"Starting AWS Transcribe job: {job_name} for {file_uri} with format {media_format} ({media_type})")
+        logger.info(f"Processing {media_type} file in {media_format} format")
         
         try:
             # Start the transcription job
@@ -72,7 +65,7 @@ class TranscriptionService:
             )
             
             # Wait for transcription job to complete
-            transcription_text, segments = self._wait_for_transcription(job_name)
+            transcription_text, segments, audio_segments = self._wait_for_transcription(job_name)
             
             # Create result object with our standard format
             result = TranscriptionResult(
@@ -81,7 +74,8 @@ class TranscriptionService:
                 timestamp=self.s3_utils.get_current_timestamp(),
                 job_name=job_name,
                 media_type=media_type,
-                segments=segments
+                segments=segments,
+                audio_segments=audio_segments
             )
             
             # Save result to S3 in our standard format
@@ -97,24 +91,30 @@ class TranscriptionService:
     
     def _wait_for_transcription(self, job_name, max_attempts=30, delay_seconds=10):
         """
-        Wait for an AWS Transcribe job to complete
+        Wait for AWS Transcribe job to complete and retrieve the result
         
         Args:
-            job_name (str): The name of the transcription job
-            max_attempts (int): Maximum number of polling attempts
-            delay_seconds (int): Seconds to wait between polling attempts
+            job_name (str): The AWS Transcribe job name to wait for
+            max_attempts (int, optional): Maximum number of attempts before giving up
+            delay_seconds (int, optional): Delay between status check attempts in seconds
             
         Returns:
-            tuple: (transcribed_text, segments)
+            tuple: The transcription text and processed segments
+            
+        Raises:
+            Exception: If the transcription job fails or times out
         """
-        logger.info(f"Waiting for transcription job {job_name} to complete")
+        attempt = 0
         
-        for attempt in range(max_attempts):
+        while attempt < max_attempts:
+            attempt += 1
+            
             response = self.transcribe_client.get_transcription_job(
                 TranscriptionJobName=job_name
             )
             
             status = response['TranscriptionJob']['TranscriptionJobStatus']
+            logger.info(f"Transcription job {job_name} status: {status} (attempt {attempt}/{max_attempts})")
             
             if status == 'COMPLETED':
                 logger.info(f"Transcription job {job_name} completed successfully")
@@ -127,15 +127,18 @@ class TranscriptionService:
                 results = transcript_json.get('results', {})
                 transcription_text = results.get('transcripts', [{}])[0].get('transcript', '')
                 
-                # Extract segments (items) with timestamps
+                # Extract word-level segments (items) with timestamps
                 segments = results.get('items', [])
                 
-                # Process segments if exists
+                # Extract sentence-level audio segments if available
+                audio_segments = results.get('audio_segments', [])
+                
+                # Process word-level segments if exists
+                processed_segments = []
                 if segments:
-                    logger.info(f"Extracted {len(segments)} segments from transcription")
+                    logger.info(f"Extracted {len(segments)} word-level segments from transcription")
                     
                     # We're only keeping the essential information from each segment
-                    processed_segments = []
                     for segment in segments:
                         if segment.get('type') in ['pronunciation', 'punctuation']:
                             processed_segment = {
@@ -147,19 +150,37 @@ class TranscriptionService:
                             }
                             processed_segments.append(processed_segment)
                     
-                    logger.info(f"Processed {len(processed_segments)} segments")
-                    return transcription_text, processed_segments
-                else:
-                    logger.warning("No segments found in transcription output")
-                    return transcription_text, []
+                    logger.info(f"Processed {len(processed_segments)} word-level segments")
                 
-            elif status == 'FAILED':
-                failure_reason = response['TranscriptionJob'].get('FailureReason', 'Unknown reason')
-                logger.error(f"Transcription job {job_name} failed: {failure_reason}")
-                raise Exception(f"Transcription failed: {failure_reason}")
+                # Process sentence-level audio segments if exists
+                processed_audio_segments = []
+                if audio_segments:
+                    logger.info(f"Extracted {len(audio_segments)} sentence-level audio segments from transcription")
+                    
+                    # Process each sentence-level segment
+                    for segment in audio_segments:
+                        processed_audio_segment = {
+                            'id': segment.get('id'),
+                            'transcript': segment.get('transcript', ''),
+                            'start_time': segment.get('start_time'),
+                            'end_time': segment.get('end_time'),
+                            'items': segment.get('items', [])
+                        }
+                        processed_audio_segments.append(processed_audio_segment)
+                    
+                    logger.info(f"Processed {len(processed_audio_segments)} sentence-level audio segments")
                 
-            logger.info(f"Transcription job status: {status}, waiting ({attempt+1}/{max_attempts})")
-            time.sleep(delay_seconds)
+                # Return both transcription text and processed segments
+                return transcription_text, processed_segments, processed_audio_segments
             
-        # If we've exhausted all attempts
-        raise Exception(f"Transcription job {job_name} did not complete within the allotted time") 
+            elif status == 'FAILED':
+                error_message = response['TranscriptionJob'].get('FailureReason', 'Unknown error')
+                logger.error(f"Transcription job {job_name} failed: {error_message}")
+                raise Exception(f"Transcription job failed: {error_message}")
+            
+            # Sleep before the next attempt
+            time.sleep(delay_seconds)
+        
+        # If max attempts reached without completion
+        logger.error(f"Transcription job {job_name} did not complete within {max_attempts} attempts")
+        raise Exception(f"Transcription job timed out after {max_attempts} attempts") 

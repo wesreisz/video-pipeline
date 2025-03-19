@@ -1,7 +1,7 @@
 class TranscriptionResult:
     """Data model for transcription results"""
     
-    def __init__(self, original_file, transcription_text, timestamp, job_name=None, media_type='audio', segments=None):
+    def __init__(self, original_file, transcription_text, timestamp, job_name=None, media_type='audio', segments=None, audio_segments=None):
         """
         Initialize a new transcription result
         
@@ -11,7 +11,8 @@ class TranscriptionResult:
             timestamp (str): ISO-formatted timestamp of when the transcription was created
             job_name (str, optional): AWS Transcribe job name
             media_type (str, optional): Type of media ('audio' or 'video'), defaults to 'audio'
-            segments (list, optional): List of time-stamped segments from the transcription
+            segments (list, optional): List of time-stamped word-level segments from the transcription
+            audio_segments (list, optional): List of sentence-level audio segments from the transcription
         """
         self.original_file = original_file
         self.transcription_text = transcription_text
@@ -19,6 +20,7 @@ class TranscriptionResult:
         self.job_name = job_name
         self.media_type = media_type
         self.segments = segments or []
+        self.audio_segments = audio_segments or []
         
     def to_dict(self):
         """
@@ -42,6 +44,10 @@ class TranscriptionResult:
         if self.segments:
             result['segments'] = self.segments
             
+        # Only add audio_segments if they exist and the list is not empty
+        if self.audio_segments:
+            result['audio_segments'] = self.audio_segments
+            
         return result
         
     @classmethod
@@ -61,5 +67,6 @@ class TranscriptionResult:
             timestamp=data.get('timestamp'),
             job_name=data.get('job_name'),
             media_type=data.get('media_type', 'audio'),  # Default to 'audio' for backward compatibility
-            segments=data.get('segments', [])
+            segments=data.get('segments', []),
+            audio_segments=data.get('audio_segments', [])  # Default to empty list for backward compatibility
         ) 

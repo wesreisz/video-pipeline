@@ -98,11 +98,23 @@ def verify_transcription(bucket, key, s3_client):
         
         transcript_text = transcription['transcription_text']
         segments = transcription.get('segments', [])
+        audio_segments = transcription.get('audio_segments', [])
         
         # Output verification results
         print(f"✅ Verification passed!")
         print(f"Transcription text: \"{transcript_text}\"")
-        print(f"Number of segments: {len(segments)}")
+        print(f"Number of word-level segments: {len(segments)}")
+        print(f"Number of sentence-level audio segments: {len(audio_segments)}")
+        
+        # Display sentence-level audio segments if available
+        if audio_segments:
+            print("\nSentence-level audio segments:")
+            for i, segment in enumerate(audio_segments):
+                print(f"  Segment {i+1}: \"{segment.get('transcript', '')}\"")
+                print(f"    Start time: {segment.get('start_time', 'N/A')}s, End time: {segment.get('end_time', 'N/A')}s")
+                print(f"    Items: {segment.get('items', [])}")
+        else:
+            print("\n⚠️ No sentence-level audio segments found in the transcription.")
         
         return True
     
