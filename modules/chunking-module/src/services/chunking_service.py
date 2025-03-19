@@ -1,4 +1,5 @@
 import logging
+import os
 
 logger = logging.getLogger()
 
@@ -13,17 +14,21 @@ class ChunkingService:
         
     def process_media(self, bucket, key):
         """
-        Process a media file and break it into chunks.
+        Process a transcription file and break it into chunks.
         
         Args:
-            bucket: S3 bucket containing the media file
-            key: S3 key for the media file
+            bucket: S3 bucket containing the transcription file
+            key: S3 key for the transcription file
             
         Returns:
             str: Output key where the chunking results are stored
         """
-        logger.info(f"Processing media file: {bucket}/{key}")
-        # Placeholder for actual chunking logic
-        logger.info("Chunking functionality to be implemented")
+        logger.info(f"Hello World from Chunking Service!")
+        logger.info(f"Received request to process: {bucket}/{key}")
         
-        return f"chunks/{key}-chunks.json" 
+        # Just return a fixed output key for now - no actual processing
+        output_filename = os.path.basename(key)
+        if output_filename.endswith('.json'):
+            output_filename = output_filename[:-5]
+        
+        return f"chunks/{output_filename}-chunks.json" 

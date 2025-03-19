@@ -1,10 +1,11 @@
 import json
 import logging
 import os
-# Use relative imports that will work when deployed as a Lambda function
-from ..utils.error_handler import handle_error
-from ..services.chunking_service import ChunkingService
-from ..utils.s3_utils import S3Utils
+# Change relative imports to absolute imports for Lambda compatibility
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from utils.error_handler import handle_error
+from services.chunking_service import ChunkingService
 
 # Configure logging
 logger = logging.getLogger()
@@ -40,20 +41,19 @@ def lambda_handler(event, context):
             if source_bucket and source_key:
                 logger.info(f"Processing file {source_key} from bucket {source_bucket}")
                 
-                # Initialize services
-                s3_utils = S3Utils()
+                # Initialize service
                 chunking_service = ChunkingService()
                 
-                # Process the transcription file
+                # Process the transcription file - simplified version just returns a path
                 output_key = chunking_service.process_media(source_bucket, source_key)
                 
                 return {
                     'statusCode': 200,
                     'body': json.dumps({
-                        'message': 'Chunking completed successfully',
+                        'message': 'Chunking request received successfully',
                         'source_bucket': source_bucket,
                         'source_file': source_key,
-                        'output_file': output_key
+                        'output_key': output_key
                     })
                 }
         

@@ -146,6 +146,24 @@ run_transcribe_e2e_test() {
     echo -e "\n${GREEN}Transcribe module end-to-end test successful!${NO_COLOR}"
 }
 
+# Function to run end-to-end test for chunking module
+run_chunking_e2e_test() {
+    echo -e "\n${BOLD}===== Running chunking module end-to-end test =====${NO_COLOR}"
+    cd "$CHUNKING_MODULE_DIR/tests/e2e"
+    
+    # Make the script executable if it's not already
+    chmod +x run_e2e_test.py
+    
+    # Run the end-to-end test with cleanup
+    echo -e "\n${YELLOW}Executing chunking module end-to-end test...${NO_COLOR}"
+    python run_e2e_test.py --cleanup || {
+        echo -e "\n${RED}Chunking module end-to-end test failed.${NO_COLOR}"
+        exit 1
+    }
+    
+    echo -e "\n${GREEN}Chunking module end-to-end test successful!${NO_COLOR}"
+}
+
 # Main deployment flow
 main() {
     # Step 1: Set up environments
@@ -162,8 +180,9 @@ main() {
     # Step 4: Deploy with Terraform
     deploy_with_terraform
     
-    # Step 5: Run end-to-end test to validate deployment
+    # Step 5: Run end-to-end tests to validate deployment
     run_transcribe_e2e_test
+    run_chunking_e2e_test
     
     echo -e "\n${GREEN}${BOLD}===== Deployment completed successfully! =====${NO_COLOR}"
 }

@@ -10,8 +10,7 @@ class TestChunkingHandler(unittest.TestCase):
     """Tests for the chunking handler."""
     
     @patch('src.handlers.chunking_handler.ChunkingService')
-    @patch('src.handlers.chunking_handler.S3Utils')
-    def test_lambda_handler_success(self, mock_s3_utils, mock_chunking_service):
+    def test_lambda_handler_success(self, mock_chunking_service):
         """Test successful execution of the lambda handler."""
         # Setup mocks
         mock_chunking_instance = MagicMock()
@@ -43,10 +42,10 @@ class TestChunkingHandler(unittest.TestCase):
         # Assertions
         self.assertEqual(response['statusCode'], 200)
         body = json.loads(response['body'])
-        self.assertEqual(body['message'], 'Chunking completed successfully')
+        self.assertEqual(body['message'], 'Chunking request received successfully')
         self.assertEqual(body['source_bucket'], 'test-bucket')
         self.assertEqual(body['source_file'], 'test-key.mp4')
-        self.assertEqual(body['output_file'], 'chunks/test-key.mp4-chunks.json')
+        self.assertEqual(body['output_key'], 'chunks/test-key.mp4-chunks.json')
         
         # Verify the service was called correctly
         mock_chunking_instance.process_media.assert_called_once_with('test-bucket', 'test-key.mp4')
