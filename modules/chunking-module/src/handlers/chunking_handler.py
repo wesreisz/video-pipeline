@@ -16,7 +16,7 @@ def lambda_handler(event, context):
     Main entry point for the chunking Lambda function.
     
     Args:
-        event: AWS Lambda event object (contains S3 event details)
+        event: AWS Lambda event object (contains S3 event details or Step Functions input)
         context: AWS Lambda context object
     
     Returns:
@@ -31,8 +31,15 @@ def lambda_handler(event, context):
             
         logger.info(f"Received event: {json.dumps(event)}")
         
-        # Extract bucket and key from S3 event if available
+        # Handle both direct S3 events and Step Functions invocations
         records = event.get('Records', [])
+        
+        # If no records found, check if this is from EventBridge/Step Functions
+        if not records and 'detail' in event:
+            logger.info("Processing event from Step Functions")
+            # Extract records from detail object if available
+            records = event.get('detail', {}).get('records', [])
+        
         if records:
             s3_event = records[0].get('s3', {})
             source_bucket = s3_event.get('bucket', {}).get('name')
@@ -44,15 +51,19 @@ def lambda_handler(event, context):
                 # Initialize service
                 chunking_service = ChunkingService()
                 
-                # Process the transcription file - simplified version just returns a path
+                # Process the transcription file
                 output_key = chunking_service.process_media(source_bucket, source_key)
+                
+                # Get the output bucket from environment variable
+                output_bucket = os.environ.get('CHUNKING_OUTPUT_BUCKET')
                 
                 return {
                     'statusCode': 200,
                     'body': json.dumps({
-                        'message': 'Chunking request received successfully',
+                        'message': 'Chunking completed successfully',
                         'source_bucket': source_bucket,
                         'source_file': source_key,
+                        'output_bucket': output_bucket,
                         'output_key': output_key
                     })
                 }

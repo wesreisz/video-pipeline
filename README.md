@@ -12,19 +12,63 @@ This project implements a serverless architecture for processing audio and video
 
 ## Architecture
 
-The solution uses AWS Serverless Application Model (SAM) with Lambda functions triggered by S3 events:
+### Video Processing Pipeline
 
-1. Video/Audio files uploaded to an input S3 bucket
-2. Lambda function triggers to process the files
-3. Processing results stored in an output S3 bucket
+The video processing pipeline uses AWS services to process media files through a serverless architecture:
 
-```mermaid
-graph LR
-    User[User] -->|Upload Audio| InputBucket[Input S3 Bucket]
-    InputBucket -->|Trigger| Lambda[Transcription Lambda]
-    Lambda -->|Store Results| OutputBucket[Output S3 Bucket]
-    User -->|Access Results| OutputBucket
+#### Previous Architecture (S3 Direct Events)
+- S3 buckets for input media, transcription output, and chunking output
+- Lambda functions for transcription and chunking
+- S3 event notifications to directly trigger Lambda functions in sequence
+
+#### New Architecture (EventBridge + Step Functions)
+- S3 buckets for input media, transcription output, and chunking output
+- CloudTrail to capture S3 object creation events
+- EventBridge to route events from CloudTrail to Step Functions
+- Step Functions state machine to orchestrate the workflow:
+  1. Transcribe Module: Processes audio/video files and creates transcriptions
+  2. Wait for Transcription: Allows time for the transcription process to complete
+  3. Chunking Module: Processes transcription files to create semantic chunks
+
+This architecture provides several advantages:
+- Better error handling and retry capabilities
+- Visualization of the workflow through the Step Functions console
+- More robust orchestration with conditional paths based on task outcomes
+- Easier monitoring and debugging of the pipeline
+
+#### Workflow Diagram
+
 ```
+┌───────────┐     ┌────────────┐     ┌──────────────┐     ┌─────────────────┐
+│           │     │            │     │              │     │                 │
+│  Upload   │────▶│ CloudTrail │────▶│ EventBridge  │────▶│  Step Functions │
+│  to S3    │     │            │     │              │     │                 │
+└───────────┘     └────────────┘     └──────────────┘     └────────┬────────┘
+                                                                    │
+                                                                    ▼
+┌───────────┐                                               ┌─────────────────┐
+│           │                                               │                 │
+│ Chunking  │◀──────────────────────────────────────────────│  Transcribe    │
+│ Output    │                                               │  Module        │
+└───────────┘                                               └─────────────────┘
+      ▲                                                              │
+      │                                                              ▼
+      │                                                     ┌─────────────────┐
+      │                                                     │                 │
+      └─────────────────────────────────────────────────────│  Chunking      │
+                                                            │  Module        │
+                                                            └─────────────────┘
+```
+
+### Deployment
+
+The infrastructure is deployed using Terraform modules for maintainability and reuse.
+
+To deploy:
+
+1. Navigate to the environment directory (e.g., `infra/environments/dev`)
+2. Run `terraform init` and `terraform plan`
+3. Deploy with `terraform apply`
 
 ## Project Structure
 

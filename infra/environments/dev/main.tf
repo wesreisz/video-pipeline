@@ -110,75 +110,322 @@ module "chunking_lambda" {
   }
 }
 
-# S3 Event triggers for Lambda - Both Audio and Video Files
-resource "aws_s3_bucket_notification" "media_notification" {
-  bucket = module.media_bucket.bucket_id
-  
-  # Audio formats
-  lambda_function {
-    lambda_function_arn = module.transcribe_lambda.function_arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = ".mp3"
-    id                  = "audio-mp3-notification"
-  }
+# EventBridge Role for S3 events
+resource "aws_iam_role" "eventbridge_role" {
+  name = "dev_eventbridge_s3_role"
 
-  lambda_function {
-    lambda_function_arn = module.transcribe_lambda.function_arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = ".wav"
-    id                  = "audio-wav-notification"
-  }
-  
-  # Video formats
-  lambda_function {
-    lambda_function_arn = module.transcribe_lambda.function_arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = ".mp4"
-    id                  = "video-mp4-notification"
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "events.amazonaws.com"
+        }
+      }
+    ]
+  })
 
-  lambda_function {
-    lambda_function_arn = module.transcribe_lambda.function_arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = ".webm"
-    id                  = "video-webm-notification"
+  tags = {
+    Environment = "dev"
+    Project     = "video-pipeline"
   }
-  
-  # Make sure the Lambda permission is created before the notification
-  depends_on = [aws_lambda_permission.allow_bucket]
 }
 
-# S3 Event triggers for Chunking Lambda - Triggered by new transcription files
-resource "aws_s3_bucket_notification" "transcription_notification" {
-  bucket = module.transcription_bucket.bucket_id
-  
-  lambda_function {
-    lambda_function_arn = module.chunking_lambda.function_arn
-    events              = ["s3:ObjectCreated:*"]
-    filter_suffix       = ".json"
-    id                  = "transcription-json-notification"
+# EventBridge permissions to invoke Step Functions
+resource "aws_iam_policy" "eventbridge_sfn_policy" {
+  name        = "dev_eventbridge_sfn_policy"
+  description = "Allow EventBridge to start Step Functions execution"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "states:StartExecution"
+        Resource = aws_sfn_state_machine.video_processing.arn
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "eventbridge_sfn_attach" {
+  role       = aws_iam_role.eventbridge_role.name
+  policy_arn = aws_iam_policy.eventbridge_sfn_policy.arn
+}
+
+# Step Functions IAM Role
+resource "aws_iam_role" "step_functions_role" {
+  name = "dev_step_functions_role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "states.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Environment = "dev"
+    Project     = "video-pipeline"
   }
+}
+
+# Step Functions Lambda Invoke Permission
+resource "aws_iam_policy" "sfn_lambda_policy" {
+  name        = "dev_sfn_lambda_policy"
+  description = "Allow Step Functions to invoke Lambda functions"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = "lambda:InvokeFunction"
+        Resource = [
+          module.transcribe_lambda.function_arn,
+          module.chunking_lambda.function_arn
+        ]
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "sfn_lambda_attach" {
+  role       = aws_iam_role.step_functions_role.name
+  policy_arn = aws_iam_policy.sfn_lambda_policy.arn
+}
+
+# Step Functions State Machine
+resource "aws_sfn_state_machine" "video_processing" {
+  name     = "dev_video_processing"
+  role_arn = aws_iam_role.step_functions_role.arn
+
+  definition = jsonencode({
+    Comment = "Video processing pipeline with transcribe and chunking",
+    StartAt = "PrepareS3EventData",
+    States = {
+      PrepareS3EventData = {
+        Type = "Pass",
+        Parameters = {
+          "bucket.$": "$.detail.requestParameters.bucketName",
+          "key.$": "$.detail.requestParameters.key"
+        },
+        ResultPath = "$.s3event",
+        Next = "TranscribeMedia"
+      },
+      TranscribeMedia = {
+        Type = "Task",
+        Resource = module.transcribe_lambda.function_arn,
+        Parameters = {
+          "Records": [
+            {
+              "s3": {
+                "bucket": {
+                  "name.$": "$.s3event.bucket"
+                },
+                "object": {
+                  "key.$": "$.s3event.key"
+                }
+              }
+            }
+          ]
+        },
+        ResultPath = "$.transcribeResult",
+        Next = "TranscribeSucceeded?",
+        Retry = [
+          {
+            ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
+            IntervalSeconds = 2,
+            MaxAttempts = 3,
+            BackoffRate = 2.0
+          }
+        ],
+        Catch = [
+          {
+            ErrorEquals = ["States.ALL"],
+            ResultPath = "$.error",
+            Next = "TranscribeFailed"
+          }
+        ]
+      },
+      "TranscribeSucceeded?": {
+        Type = "Choice",
+        Choices = [
+          {
+            Variable = "$.transcribeResult.statusCode",
+            NumericEquals = 200,
+            Next = "WaitForTranscriptionCompletion"
+          }
+        ],
+        Default = "TranscribeFailed"
+      },
+      WaitForTranscriptionCompletion = {
+        Type = "Wait",
+        Seconds = 30,
+        Next = "ChunkTranscription"
+      },
+      ChunkTranscription = {
+        Type = "Task",
+        Resource = module.chunking_lambda.function_arn,
+        Parameters = {
+          "detail": {
+            "records.$": "$.transcribeResult.detail.records"
+          }
+        },
+        ResultPath = "$.chunkResult",
+        Next = "ChunkSucceeded?",
+        Retry = [
+          {
+            ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
+            IntervalSeconds = 2,
+            MaxAttempts = 3,
+            BackoffRate = 2.0
+          }
+        ],
+        Catch = [
+          {
+            ErrorEquals = ["States.ALL"],
+            ResultPath = "$.error",
+            Next = "ChunkingFailed"
+          }
+        ]
+      },
+      "ChunkSucceeded?": {
+        Type = "Choice",
+        Choices = [
+          {
+            Variable = "$.chunkResult.statusCode",
+            NumericEquals = 200,
+            Next = "ProcessingSucceeded"
+          }
+        ],
+        Default = "ChunkingFailed"
+      },
+      ProcessingSucceeded = {
+        Type = "Succeed"
+      },
+      TranscribeFailed = {
+        Type = "Fail",
+        Error = "TranscriptionError",
+        Cause = "Transcription processing failed"
+      },
+      ChunkingFailed = {
+        Type = "Fail",
+        Error = "ChunkingError",
+        Cause = "Chunking processing failed"
+      }
+    }
+  })
+
+  tags = {
+    Environment = "dev"
+    Project     = "video-pipeline"
+  }
+}
+
+# Create a bucket for CloudTrail logs
+module "cloudtrail_logs_bucket" {
+  source = "../../modules/s3"
   
-  # Make sure the Lambda permission is created before the notification
-  depends_on = [aws_lambda_permission.allow_transcription_bucket]
+  bucket_name = "dev-video-pipeline-cloudtrail-logs"
+  tags = {
+    Environment = "dev"
+    Project     = "video-pipeline"
+  }
 }
 
-# Lambda permission for S3 to invoke transcribe lambda
-resource "aws_lambda_permission" "allow_bucket" {
-  statement_id  = "AllowExecutionFromS3Bucket"
-  action        = "lambda:InvokeFunction"
-  function_name = module.transcribe_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = module.media_bucket.bucket_arn
+# CloudTrail bucket policy to allow CloudTrail to write logs
+resource "aws_s3_bucket_policy" "cloudtrail_bucket_policy" {
+  bucket = module.cloudtrail_logs_bucket.bucket_id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AWSCloudTrailAclCheck"
+        Effect    = "Allow"
+        Principal = { Service = "cloudtrail.amazonaws.com" }
+        Action    = "s3:GetBucketAcl"
+        Resource  = module.cloudtrail_logs_bucket.bucket_arn
+      },
+      {
+        Sid       = "AWSCloudTrailWrite"
+        Effect    = "Allow"
+        Principal = { Service = "cloudtrail.amazonaws.com" }
+        Action    = "s3:PutObject"
+        Resource  = "${module.cloudtrail_logs_bucket.bucket_arn}/AWSLogs/*"
+        Condition = {
+          StringEquals = {
+            "s3:x-amz-acl" = "bucket-owner-full-control"
+          }
+        }
+      }
+    ]
+  })
 }
 
-# Lambda permission for S3 to invoke chunking lambda
-resource "aws_lambda_permission" "allow_transcription_bucket" {
-  statement_id  = "AllowExecutionFromTranscriptionBucket"
-  action        = "lambda:InvokeFunction"
-  function_name = module.chunking_lambda.function_name
-  principal     = "s3.amazonaws.com"
-  source_arn    = module.transcription_bucket.bucket_arn
+# Enable S3 CloudTrail for EventBridge integration
+resource "aws_cloudtrail" "s3_cloudtrail" {
+  name                          = "dev-s3-cloudtrail"
+  s3_bucket_name                = module.cloudtrail_logs_bucket.bucket_id
+  include_global_service_events = false
+  is_multi_region_trail         = false
+  enable_logging                = true
+  depends_on                    = [aws_s3_bucket_policy.cloudtrail_bucket_policy]
+
+  event_selector {
+    read_write_type           = "WriteOnly"
+    include_management_events = true
+
+    data_resource {
+      type   = "AWS::S3::Object"
+      values = ["${module.media_bucket.bucket_arn}/"]
+    }
+  }
+
+  tags = {
+    Environment = "dev"
+    Project     = "video-pipeline"
+  }
+}
+
+# Update EventBridge Rule to capture S3 events via CloudTrail
+resource "aws_cloudwatch_event_rule" "s3_input_rule" {
+  name        = "dev-media-input-rule"
+  description = "Capture S3 events from media input bucket"
+
+  event_pattern = jsonencode({
+    source      = ["aws.s3"],
+    detail-type = ["AWS API Call via CloudTrail"],
+    detail = {
+      eventSource = ["s3.amazonaws.com"],
+      eventName   = ["PutObject", "CompleteMultipartUpload"],
+      requestParameters = {
+        bucketName = [module.media_bucket.bucket_id]
+      }
+    }
+  })
+
+  tags = {
+    Environment = "dev"
+    Project     = "video-pipeline"
+  }
+}
+
+# EventBridge Target for Step Functions
+resource "aws_cloudwatch_event_target" "sfn_target" {
+  rule      = aws_cloudwatch_event_rule.s3_input_rule.name
+  target_id = "StepFunctionsTarget"
+  arn       = aws_sfn_state_machine.video_processing.arn
+  role_arn  = aws_iam_role.eventbridge_role.arn
 }
 
 # Outputs
@@ -200,4 +447,12 @@ output "transcribe_lambda_function_name" {
 
 output "chunking_lambda_function_name" {
   value = module.chunking_lambda.function_name
+}
+
+output "sfn_state_machine_arn" {
+  value = aws_sfn_state_machine.video_processing.arn
+}
+
+output "eventbridge_rule_arn" {
+  value = aws_cloudwatch_event_rule.s3_input_rule.arn
 } 

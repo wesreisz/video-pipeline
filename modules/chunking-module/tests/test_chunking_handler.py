@@ -42,10 +42,13 @@ class TestChunkingHandler(unittest.TestCase):
         # Assertions
         self.assertEqual(response['statusCode'], 200)
         body = json.loads(response['body'])
-        self.assertEqual(body['message'], 'Chunking request received successfully')
+        self.assertEqual(body['message'], 'Chunking completed successfully')
         self.assertEqual(body['source_bucket'], 'test-bucket')
         self.assertEqual(body['source_file'], 'test-key.mp4')
         self.assertEqual(body['output_key'], 'chunks/test-key.mp4-chunks.json')
+        
+        # Check for output_bucket (may be None in tests)
+        self.assertIn('output_bucket', body)
         
         # Verify the service was called correctly
         mock_chunking_instance.process_media.assert_called_once_with('test-bucket', 'test-key.mp4')
