@@ -1,6 +1,6 @@
 ---
-description: Video Pipeline Project Structure 
-globs: *  
+description: Video Pipeline Project Structure
+globs: *
 alwaysApply: true
 ---
 # Video Pipeline Project Structure
@@ -15,9 +15,6 @@ This project is organized as follows:
 
 - `projects/`: Individual service implementations
   - `transcribe-module/`: Service for transcribing audio files
-
-- `libs/`: Shared libraries and code
-  - `base/`: Base libraries used across projects
 
 - `samples/`: Sample media files for testing
   - Contains sample audio files (e.g., sample.mp3)

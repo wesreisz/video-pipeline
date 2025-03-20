@@ -1,2 +1,0 @@
-boto3>=1.26.0
-# Add other dependencies as needed for shared libraries 
