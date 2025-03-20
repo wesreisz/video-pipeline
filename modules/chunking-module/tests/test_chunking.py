@@ -100,17 +100,17 @@ def create_step_functions_event(bucket, key):
         }
     }
     
-def test_chunking_service(bucket, key):
+def test_chunking_service(s3_bucket, s3_key):
     """Test the ChunkingService directly."""
-    logger.info(f"Testing ChunkingService directly with bucket={bucket}, key={key}")
+    logger.info(f"Testing ChunkingService directly with bucket={s3_bucket}, key={s3_key}")
     
     try:
         # Create an instance of ChunkingService
         chunking_service = ChunkingService()
         
         # Process the transcription file
-        logger.info(f"Processing transcription file: {bucket}/{key}")
-        result = chunking_service.process_media(bucket, key)
+        logger.info(f"Processing transcription file: {s3_bucket}/{s3_key}")
+        result = chunking_service.process_media(s3_bucket, s3_key)
         
         # Check the result
         if result:
@@ -154,13 +154,13 @@ def test_chunking_service(bucket, key):
         logger.error(f"Error testing ChunkingService: {e}")
         return False
 
-def test_lambda_handler(bucket, key):
+def test_lambda_handler(s3_bucket, s3_key):
     """Test the chunking Lambda handler."""
-    logger.info(f"Testing lambda_handler with bucket={bucket}, key={key}")
+    logger.info(f"Testing lambda_handler with bucket={s3_bucket}, key={s3_key}")
     
     try:
         # Create a simulated S3 event
-        event = create_s3_event(bucket, key)
+        event = create_s3_event(s3_bucket, s3_key)
         
         # Create a simulated context
         class MockContext:
@@ -195,7 +195,7 @@ def test_lambda_handler(bucket, key):
                 logger.info(f"Total duration: {body.get('total_duration')}s")
                 
             # Now test with a Step Functions style event
-            step_event = create_step_functions_event(bucket, key)
+            step_event = create_step_functions_event(s3_bucket, s3_key)
             logger.info("\nCalling lambda_handler with Step Functions event")
             step_response = lambda_handler(step_event, context)
             

@@ -20,6 +20,7 @@ import json
 import logging
 import boto3
 from datetime import datetime
+import pytest
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, 
@@ -81,9 +82,13 @@ except ImportError as e:
                 logger.error(f"Error downloading JSON from S3: {str(e)}")
                 raise
 
-def test_file_download(bucket, key):
+def test_file_download(s3_bucket, s3_key):
     """Test downloading a file from S3 using our S3Utils."""
-    logger.info(f"Testing file download from bucket={bucket}, key={key}")
+    # Skip test if bucket or key not provided
+    if not s3_bucket or not s3_key:
+        pytest.skip("Skipping test_file_download: bucket or key not provided")
+        
+    logger.info(f"Testing file download from bucket={s3_bucket}, key={s3_key}")
     
     # Create an instance of S3Utils
     s3_utils = S3Utils()
@@ -93,13 +98,13 @@ def test_file_download(bucket, key):
     os.makedirs(temp_dir, exist_ok=True)
     
     # Generate a local filename from the S3 key
-    filename = os.path.basename(key)
+    filename = os.path.basename(s3_key)
     local_path = os.path.join(temp_dir, filename)
     
     # Try downloading with download_file
     try:
         logger.info("Testing download_file method...")
-        s3_utils.download_file(bucket, key, local_path)
+        s3_utils.download_file(s3_bucket, s3_key, local_path)
         
         # Check if the file exists
         if os.path.exists(local_path):
@@ -137,7 +142,7 @@ def test_file_download(bucket, key):
     # Now try with download_json method
     try:
         logger.info("\nTesting download_json method...")
-        data = s3_utils.download_json(bucket, key)
+        data = s3_utils.download_json(s3_bucket, s3_key)
         
         logger.info("JSON successfully downloaded and parsed")
         logger.info(f"Keys found: {list(data.keys())}")
