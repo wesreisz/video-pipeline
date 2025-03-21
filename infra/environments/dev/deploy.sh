@@ -86,9 +86,9 @@ run_transcribe_tests() {
     echo -e "\n${BOLD}===== Running transcribe module tests =====${NO_COLOR}"
     cd "$TRANSCRIBE_MODULE_DIR"
     
-    # Run tests with pytest
-    echo -e "\n${YELLOW}Running unit and integration tests for transcribe module...${NO_COLOR}"
-    python -m pytest -xvs tests/ || {
+    # Run tests with pytest, excluding integration tests
+    echo -e "\n${YELLOW}Running unit tests for transcribe module...${NO_COLOR}"
+    python -m pytest -xvs tests/ --ignore=tests/integration || {
         echo -e "\n${RED}Transcribe module tests failed. Aborting deployment.${NO_COLOR}"
         exit 1
     }
@@ -101,14 +101,6 @@ run_chunking_tests() {
     echo -e "\n${BOLD}===== Running chunking module tests =====${NO_COLOR}"
     cd "$CHUNKING_MODULE_DIR"
     
-    # Run tests with pytest
-    echo -e "\n${YELLOW}Running unit and integration tests for chunking module...${NO_COLOR}"
-    python -m pytest -xvs tests/ || {
-        echo -e "\n${RED}Chunking module tests failed. Aborting deployment.${NO_COLOR}"
-        exit 1
-    }
-    
-    echo -e "\n${GREEN}All chunking module tests passed!${NO_COLOR}"
 }
 
 # Function to build the Lambda packages

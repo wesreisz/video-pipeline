@@ -82,7 +82,4 @@ class TestTranscribeHandler(unittest.TestCase):
         
         # Verify the response
         self.assertEqual(response['statusCode'], 400)
-        self.assertEqual(json.loads(response['body']), 'No records found in event')
-
-if __name__ == '__main__':
-    unittest.main() 
+        self.assertEqual(json.loads(response['body']), 'No records found in event') 
