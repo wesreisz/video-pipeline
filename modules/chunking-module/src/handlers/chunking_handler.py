@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import sys
+import boto3
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.error_handler import handle_error
 
@@ -21,22 +22,23 @@ def lambda_handler(event, context):
         dict: Response containing success/failure information
     """
     try:
-        logger.info("Hello World from Chunking Module!")
+        logger.info("Inside the Chunking Module!")
         
-        # Check if event is None and raise an exception if it is
         if event is None:
             raise ValueError("Event cannot be None")
             
         logger.info(f"Received event: {json.dumps(event)}")
         
-        # Handle both direct S3 events and Step Functions invocations
+        # Get records from either S3 events or Step Functions
         records = event.get('Records', [])
-        
-        # If no records found, check if this is from EventBridge/Step Functions
         if not records and 'detail' in event:
             logger.info("Processing event from Step Functions")
-            # Extract records from detail object if available
             records = event.get('detail', {}).get('records', [])
+        
+        response_data = {
+            'message': 'Chunking module initialized successfully',
+            'event_received': event
+        }
         
         if records:
             s3_event = records[0].get('s3', {})
@@ -45,24 +47,36 @@ def lambda_handler(event, context):
             
             if source_bucket and source_key:
                 logger.info(f"Processing file {source_key} from bucket {source_bucket}")
+
+                # Initialize S3 client
+                s3_client = boto3.client('s3')
                 
-                return {
-                    'statusCode': 200,
-                    'body': json.dumps({
-                        'message': 'Chunking completed successfully',
-                        'source_bucket': source_bucket,
-                        'source_file': source_key,
-                        'note': 'Chunking details are logged to CloudWatch instead of writing to a bucket'
-                    })
+                try:
+                    # Get the object from S3
+                    response = s3_client.get_object(
+                        Bucket=source_bucket,
+                        Key=source_key
+                    )
+                    
+                    # Load the JSON content into a dictionary
+                    audio_segments = json.loads(response['Body'].read().decode('utf-8'))
+                    logger.info(f"Successfully loaded {len(audio_segments)} audio-segments")
+                    
+                except s3_client.exceptions.NoSuchKey:
+                    raise ValueError(f"File {source_key} not found in bucket {source_bucket}")
+                except json.JSONDecodeError:
+                    raise ValueError(f"File {source_key} is not valid JSON")
+                
+                response_data = {
+                    'message': 'Chunking completed successfully',
+                    'source_bucket': source_bucket,
+                    'source_file': source_key,
+                    'note': 'Chunking details are logged to CloudWatch instead of writing to a bucket'
                 }
         
-        # If not processing a file, just return success
         return {
             'statusCode': 200,
-            'body': json.dumps({
-                'message': 'Chunking module initialized successfully',
-                'event_received': event
-            })
+            'body': json.dumps(response_data)
         }
     
     except Exception as e:

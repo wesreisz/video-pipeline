@@ -1,0 +1,1 @@
+Add boto3 code to retrieve and parse JSON from an S3 object at line 50 in chunking_handler.py. Use source_bucket and source_key variables to get the object and store it in audio_segments dictionary.
