@@ -27,8 +27,8 @@ def handle_error(exception, message="An error occurred"):
     return {
         'statusCode': 500,
         'body': json.dumps({
-            'error': error_type,
-            'message': message,
-            'details': error_message
+            'error': error_message,
+            'type': error_type,
+            'message': message
         })
     } 

@@ -1,0 +1,7 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+Architecture Considerations:
+* We building an event driven system. There are multiple ways you can pass events on AWS. When as havea  choice between different formats, we will always use EventBridge format.

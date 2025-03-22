@@ -64,3 +64,6 @@ Each module should include:
 - Use consistent indentation (2 spaces)
 - Use comments to explain complex configurations
 - Keep resource blocks concise and focused
+
+## Terraform version
+- Should be greater than or equal to 5.91.0

@@ -85,7 +85,8 @@ module "chunking_lambda" {
   output_path = "../../build/chunking_lambda.zip"
   
   environment_variables = {
-    CHUNKING_OUTPUT_BUCKET = "placeholder-bucket"
+    TRANSCRIPTION_BUCKET = module.transcription_bucket.bucket_id
+    SQS_QUEUE_URL       = module.audio_segments_queue.queue_url
   }
   
   s3_bucket_arns = [
@@ -213,18 +214,12 @@ resource "aws_sfn_state_machine" "video_processing" {
         Type = "Task",
         Resource = module.transcribe_lambda.function_arn,
         Parameters = {
-          "Records": [
-            {
-              "s3": {
-                "bucket": {
-                  "name.$": "$.s3event.bucket"
-                },
-                "object": {
-                  "key.$": "$.s3event.key"
-                }
-              }
+          "detail": {
+            "requestParameters": {
+              "bucketName.$": "$.s3event.bucket",
+              "key.$": "$.s3event.key"
             }
-          ]
+          }
         },
         ResultPath = "$.transcribeResult",
         Next = "TranscribeSucceeded?",
@@ -264,9 +259,7 @@ resource "aws_sfn_state_machine" "video_processing" {
         Type = "Task",
         Resource = module.chunking_lambda.function_arn,
         Parameters = {
-          "detail": {
-            "records.$": "$.transcribeResult.detail.records"
-          }
+          "detail.$": "$.transcribeResult.detail"
         },
         ResultPath = "$.chunkResult",
         Next = "ChunkSucceeded?",
@@ -364,18 +357,35 @@ resource "aws_s3_bucket_policy" "cloudtrail_bucket_policy" {
 resource "aws_cloudtrail" "s3_cloudtrail" {
   name                          = "dev-s3-cloudtrail"
   s3_bucket_name                = module.cloudtrail_logs_bucket.bucket_id
-  include_global_service_events = false
-  is_multi_region_trail         = false
-  enable_logging                = true
-  depends_on                    = [aws_s3_bucket_policy.cloudtrail_bucket_policy]
+  include_global_service_events = true
+  is_multi_region_trail        = false
+  enable_logging               = true
+  depends_on                   = [aws_s3_bucket_policy.cloudtrail_bucket_policy]
 
-  event_selector {
-    read_write_type           = "WriteOnly"
-    include_management_events = true
+  advanced_event_selector {
+    name = "Log S3 object-level events"
 
-    data_resource {
-      type   = "AWS::S3::Object"
-      values = ["${module.media_bucket.bucket_arn}/"]
+    field_selector {
+      field  = "eventCategory"
+      equals = ["Data"]
+    }
+
+    field_selector {
+      field = "resources.type"
+      equals = ["AWS::S3::Object"]
+    }
+
+    field_selector {
+      field = "resources.ARN"
+      starts_with = ["${module.media_bucket.bucket_arn}/"]
+    }
+  }
+
+  advanced_event_selector {
+    name = "Log management events"
+    field_selector {
+      field  = "eventCategory"
+      equals = ["Management"]
     }
   }
 
@@ -391,11 +401,11 @@ resource "aws_cloudwatch_event_rule" "s3_input_rule" {
   description = "Capture S3 events from media input bucket"
 
   event_pattern = jsonencode({
-    source      = ["aws.s3"],
-    detail-type = ["AWS API Call via CloudTrail"],
+    source      = ["aws.s3"]
+    detail-type = ["AWS API Call via CloudTrail"]
     detail = {
-      eventSource = ["s3.amazonaws.com"],
-      eventName   = ["PutObject", "CompleteMultipartUpload"],
+      eventSource = ["s3.amazonaws.com"]
+      eventName   = ["PutObject", "CompleteMultipartUpload"]
       requestParameters = {
         bucketName = [module.media_bucket.bucket_id]
       }
@@ -414,6 +424,13 @@ resource "aws_cloudwatch_event_target" "sfn_target" {
   target_id = "StepFunctionsTarget"
   arn       = aws_sfn_state_machine.video_processing.arn
   role_arn  = aws_iam_role.eventbridge_role.arn
+}
+
+module "audio_segments_queue" {
+  source = "../../modules/sqs"
+  
+  environment     = "dev"
+  lambda_role_name = module.chunking_lambda.role_name
 }
 
 # Outputs

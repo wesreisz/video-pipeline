@@ -1,0 +1,165 @@
+---
+description: 
+globs: *.py
+alwaysApply: false
+---
+# 🧼 Clean Python Code Guidelines
+
+Language-level best practices for writing clear, idiomatic, maintainable Python code 
+
+
+## ✅ 1. Use Type Hints Everywhere
+
+Type hints make inputs and outputs explicit and help both humans and tools (including LLMs) understand your code.
+
+```python
+def fetch_user(user_id: str) -> User:
+    ...
+```
+
+Use `Optional`, `Union`, `List`, `Dict`, `Literal`, etc., when appropriate.
+
+---
+
+## ✅ 2. Keep Functions Small and Focused
+
+- Do one thing per function
+- Keep them under ~20 lines when possible
+- Prefer pure functions unless side effects are required
+
+```python
+def calculate_discount(price: float, percent: float) -> float:
+    return price * (1 - percent / 100)
+```
+
+---
+
+## ✅ 3. Use Descriptive Names
+
+- Be specific and clear
+- Avoid abbreviations and generic names
+
+| Item        | Convention     |
+|-------------|----------------|
+| Variables   | `snake_case`   |
+| Functions   | `snake_case()` |
+| Classes     | `PascalCase`   |
+| Constants   | `ALL_CAPS`     |
+| Modules     | `snake_case.py`|
+
+---
+
+## ✅ 4. Use Dataclasses for Simple Data Containers
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Item:
+    name: str
+    price: float
+    quantity: int = 1
+```
+
+Benefits:
+- Self-documenting
+- Easy to refactor
+- IDE/LLM-friendly
+
+---
+
+## ✅ 5. Write Clear Docstrings
+
+Keep them minimal but informative. Describe the **what** and **why**.
+
+```python
+def calculate_tax(amount: float, rate: float) -> float:
+    """
+    Returns the tax amount for a given value.
+    """
+    return amount * rate
+```
+
+---
+
+## ✅ 6. Embrace Pythonic Idioms
+
+Prefer idiomatic expressions:
+
+| Instead of             | Use                    |
+|------------------------|------------------------|
+| `len(list) == 0`       | `if not list:`         |
+| `for i in range(len(x))` | `for x in xs:`       |
+| `tmp = [] + append()`  | List comprehensions    |
+| `if x == True:`        | `if x:`                |
+| `if x != None:`        | `if x is not None:`    |
+
+---
+
+## ✅ 7. Avoid Deep Nesting
+
+Use **early returns** and guard clauses.
+
+```python
+def process_user(user: User):
+    if user is None:
+        return
+    if not user.active:
+        return
+    # Proceed with logic
+```
+
+---
+
+## ✅ 8. Use Classes When Behavior Is Grouped
+
+Use classes when state and behavior logically belong together.
+
+```python
+class ShoppingCart:
+    def __init__(self):
+        self.items: List[Item] = []
+
+    def add(self, item: Item):
+        self.items.append(item)
+
+    def total(self) -> float:
+        return sum(i.price * i.quantity for i in self.items)
+```
+
+---
+
+## ✅ 9. Prefer Exceptions Over Magic Values
+
+Handle failure with exceptions, not return codes or `None`.
+
+```python
+def parse_int(value: str) -> int:
+    try:
+        return int(value)
+    except ValueError:
+        raise InvalidInputError("Not a number")
+```
+
+Use custom exceptions for domain-specific errors.
+
+---
+
+## ✅ 10. Favor Composition Over Inheritance
+
+Avoid subclassing built-ins or overusing inheritance.
+
+Bad:
+```python
+class SpecialList(list): ...
+```
+
+Good:
+```python
+class SpecialList:
+    def __init__(self, values: List[int]):
+        self.values = values
+```
+
+
+> “Code is read more often than it is written — especially by your AI pair programmer.”

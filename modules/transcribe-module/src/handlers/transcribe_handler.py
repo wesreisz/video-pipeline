@@ -14,7 +14,7 @@ def lambda_handler(event, context):
     Main entry point for the transcription Lambda function.
     
     Args:
-        event: AWS Lambda event object (contains S3 event details or Step Functions input)
+        event: AWS Lambda event object (contains EventBridge event details or S3 event)
         context: AWS Lambda context object
     
     Returns:
@@ -23,14 +23,27 @@ def lambda_handler(event, context):
     try:
         logger.info(f"Received event: {json.dumps(event)}")
         
-        # Handle both direct S3 events and Step Functions invocations
-        records = event.get('Records', [])
+        # Extract records from either EventBridge or S3 event format
+        records = []
         
-        # If no records found, check if this is from EventBridge/Step Functions
-        if not records and 'detail' in event:
+        # Check for EventBridge format first (from Step Functions)
+        if 'detail' in event:
             logger.info("Processing event from EventBridge/Step Functions")
-            # Extract records from detail object if available
-            records = event.get('detail', {}).get('records', [])
+            if 'requestParameters' in event['detail']:
+                # Direct EventBridge S3 event
+                records = [{
+                    's3': {
+                        'bucket': {'name': event['detail']['requestParameters']['bucketName']},
+                        'object': {'key': event['detail']['requestParameters']['key']}
+                    }
+                }]
+            else:
+                # Passed through Step Functions
+                records = event.get('detail', {}).get('records', [])
+        
+        # Fallback to direct S3 event format (for testing)
+        if not records:
+            records = event.get('Records', [])
         
         if not records:
             return {
@@ -38,7 +51,7 @@ def lambda_handler(event, context):
                 'body': json.dumps('No records found in event')
             }
         
-        # Extract bucket and key from S3 event
+        # Extract bucket and key from record
         s3_event = records[0].get('s3', {})
         bucket = s3_event.get('bucket', {}).get('name')
         key = s3_event.get('object', {}).get('key')
@@ -58,8 +71,18 @@ def lambda_handler(event, context):
         # Process the media file (audio or video)
         output_key = transcription_service.process_media(bucket, key)
         
+        # Prepare response in EventBridge format
+        output_bucket = os.environ.get('TRANSCRIPTION_OUTPUT_BUCKET')
         response = {
             'statusCode': 200,
+            'detail': {
+                'records': [{
+                    's3': {
+                        'bucket': {'name': output_bucket},
+                        'object': {'key': output_key}
+                    }
+                }]
+            },
             'body': json.dumps({
                 'message': 'Transcription completed successfully',
                 'bucket': bucket,
@@ -67,27 +90,6 @@ def lambda_handler(event, context):
                 'transcription_file': output_key
             })
         }
-        
-        # For Step Functions, include the output bucket and key in the response
-        output_bucket = os.environ.get('TRANSCRIPTION_OUTPUT_BUCKET')
-        if output_bucket:
-            response['output_bucket'] = output_bucket
-            response['output_key'] = output_key
-            # Add formatted records for the next step
-            response['detail'] = {
-                'records': [
-                    {
-                        's3': {
-                            'bucket': {
-                                'name': output_bucket
-                            },
-                            'object': {
-                                'key': output_key
-                            }
-                        }
-                    }
-                ]
-            }
         
         return response
     
