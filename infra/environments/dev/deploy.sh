@@ -38,6 +38,9 @@ activate_transcribe_venv() {
     echo -e "\n${YELLOW}Activating virtual environment for transcribe module...${NO_COLOR}"
     source "$TRANSCRIBE_VENV_DIR/bin/activate"
     
+    echo -e "\n${YELLOW}Updating pip to latest version...${NO_COLOR}"
+    python -m pip install --upgrade pip > /dev/null 2>&1
+    
     echo -e "\n${YELLOW}Installing dependencies for transcribe module...${NO_COLOR}"
     pip install -q -r "$TRANSCRIBE_MODULE_DIR/requirements.txt"
     pip install -q -r "$TRANSCRIBE_MODULE_DIR/dev-requirements.txt"
@@ -53,6 +56,9 @@ activate_chunking_venv() {
     
     echo -e "\n${YELLOW}Activating virtual environment for chunking module...${NO_COLOR}"
     source "$CHUNKING_VENV_DIR/bin/activate"
+    
+    echo -e "\n${YELLOW}Updating pip to latest version...${NO_COLOR}"
+    python -m pip install --upgrade pip > /dev/null 2>&1
     
     echo -e "\n${YELLOW}Installing dependencies for chunking module...${NO_COLOR}"
     pip install -q -r "$CHUNKING_MODULE_DIR/requirements.txt"
@@ -229,43 +235,6 @@ run_e2e_test() {
         echo -e "\n${RED}Consolidated pipeline end-to-end test failed.${NO_COLOR}"
         exit 1
     }
-
-    # Add SQS verification
-    echo -e "\n${YELLOW}Verifying SQS message delivery...${NO_COLOR}"
-    
-    # Wait for messages to appear in the queue (up to 30 seconds)
-    local max_attempts=6
-    local attempt=1
-    local messages_found=false
-    
-    while [ $attempt -le $max_attempts ]; do
-        echo -e "Checking SQS queue (attempt $attempt of $max_attempts)..."
-        
-        # Get messages from the queue
-        local queue_messages=$(aws sqs receive-message \
-            --queue-url https://sqs.us-east-1.amazonaws.com/855007292085/audio_segments_queue \
-            --max-number-of-messages 10 2>/dev/null)
-        
-        # Check if messages exist
-        if echo "$queue_messages" | grep -q "MessageId"; then
-            echo -e "\n${GREEN}✓ Messages found in SQS queue${NO_COLOR}"
-            echo -e "Queue contents:"
-            echo "$queue_messages" | jq -r '.Messages[] | "MessageId: \(.MessageId)\nBody: \(.Body)\n"'
-            messages_found=true
-            break
-        fi
-        
-        echo "No messages found yet, waiting 5 seconds..."
-        sleep 5
-        attempt=$((attempt + 1))
-    done
-    
-    if [ "$messages_found" = false ]; then
-        echo -e "\n${RED}No messages found in SQS queue after ${max_attempts} attempts.${NO_COLOR}"
-        exit 1
-    fi
-    
-    echo -e "\n${GREEN}Consolidated E2E Test completed successfully!${NO_COLOR}"
 }
 
 # Main deployment flow
@@ -293,6 +262,8 @@ main() {
         exit 1
     }
     
+     echo -e "\n${GREEN}${BOLD}===== Running a complete end-to-end test =====${NO_COLOR}"
+
     # Step 7: Run consolidated end-to-end test to validate deployment
     run_e2e_test
     

@@ -47,7 +47,7 @@ module "transcribe_lambda" {
   function_name = "dev_media_transcribe"
   handler       = "handlers/transcribe_handler.lambda_handler"
   runtime       = "python3.9"
-  timeout       = 60
+  timeout       = 300
   memory_size   = 256
   
   source_dir  = "../../../modules/transcribe-module/src"
@@ -227,7 +227,7 @@ resource "aws_sfn_state_machine" "video_processing" {
           {
             ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
             IntervalSeconds = 2,
-            MaxAttempts = 3,
+            MaxAttempts = 5,
             BackoffRate = 2.0
           }
         ],
@@ -252,7 +252,7 @@ resource "aws_sfn_state_machine" "video_processing" {
       },
       WaitForTranscriptionCompletion = {
         Type = "Wait",
-        Seconds = 30,
+        Seconds = 60,
         Next = "ChunkTranscription"
       },
       ChunkTranscription = {
