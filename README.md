@@ -1,239 +1,190 @@
+```mermaid
+flowchart TD
+    A["User"] -- Uploads file --> B["Amazon S3"]
+
+    B -- Triggers --> L1[Transcription]
+    subgraph L1["Transcription"]
+         D["Transcription Module"]
+         E["AWS Transcribe Service"]
+         D -- Uses --> E
+    end
+    D -- Writes transcription back to --> B
+
+    B -- Notifies --> L2[Chucking]
+    subgraph L2["Chucking"]
+         J["Text Extraction Module"]
+         J -- Loads text chunks into --> G["SQS Queue"]
+    end
+
+    G -- Invokes in development --> EM[Embedding]
+    subgraph EM["Embedding"]
+         H["Embedding Module"]
+         I["Pinecone Vector DB"]
+         H -- Stores embeddings in --> I
+    end
+
+    LLM["LLM"] -- Accesses --> I
+
+    A@{ shape: sm-circ}
+    style H fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style I fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style A color:#000000
+```
+
 # Video Pipeline
 
-A serverless audio/video processing pipeline designed to automate transcription and other media processing. This pipeline will be used as part of the InfoQ Certified Architect in Emerging Technologies (ICAET) certification at QCon London. 
+A serverless audio/video processing pipeline designed to automate transcription and semantic chunking of media content. This pipeline is part of the InfoQ Certified Architect in Emerging Technologies (ICAET) certification at QCon London.
 
 ## Project Overview
 
-This project implements a serverless architecture for processing audio and video files. The core functionality includes:
+This project implements a modern serverless architecture for processing audio and video files, featuring:
 
-- Automatic transcription of audio files
-- Scalable infrastructure using AWS services
-- Modular design for easy extension with additional processing capabilities
+- Automatic transcription of audio/video files using AWS Transcribe
+- Semantic chunking of transcriptions for improved content organization
+- Event-driven architecture using EventBridge and Step Functions
+- Infrastructure as Code using Terraform
+- Comprehensive testing suite including unit, integration, and end-to-end tests
 
 ## Architecture
 
-### Video Processing Pipeline
+The video processing pipeline leverages AWS services in a serverless architecture pattern:
 
-The video processing pipeline uses AWS services to process media files through a serverless architecture:
+### Core Components
 
-#### Previous Architecture (S3 Direct Events)
-- S3 buckets for input media, transcription output, and chunking output
-- Lambda functions for transcription and chunking
-- S3 event notifications to directly trigger Lambda functions in sequence
+1. **Storage Layer**
+   - S3 buckets for input media files
+   - Separate buckets for transcription and chunking outputs
+   - Secure and scalable storage with versioning
 
-#### New Architecture (EventBridge + Step Functions)
-- S3 buckets for input media, transcription output, and chunking output
-- CloudTrail to capture S3 object creation events
-- EventBridge to route events from CloudTrail to Step Functions
-- Step Functions state machine to orchestrate the workflow:
-  1. Transcribe Module: Processes audio/video files and creates transcriptions
-  2. Wait for Transcription: Allows time for the transcription process to complete
-  3. Chunking Module: Processes transcription files to create semantic chunks
+2. **Event Processing**
+   - CloudTrail for capturing S3 object creation events
+   - EventBridge for event routing and management
+   - Step Functions for workflow orchestration
 
-This architecture provides several advantages:
-- Better error handling and retry capabilities
-- Visualization of the workflow through the Step Functions console
-- More robust orchestration with conditional paths based on task outcomes
-- Easier monitoring and debugging of the pipeline
+3. **Processing Modules**
+   - Transcribe Module: Handles audio/video transcription
+   - Chunking Module: Processes transcriptions into semantic chunks
+   - Lambda functions for serverless execution
 
-#### Workflow Diagram
+### Workflow Diagram
 
-```
-┌───────────┐     ┌────────────┐     ┌──────────────┐     ┌─────────────────┐
-│           │     │            │     │              │     │                 │
-│  Upload   │────▶│ CloudTrail │────▶│ EventBridge  │────▶│  Step Functions │
-│  to S3    │     │            │     │              │     │                 │
-└───────────┘     └────────────┘     └──────────────┘     └────────┬────────┘
-                                                                    │
-                                                                    ▼
-┌───────────┐                                               ┌─────────────────┐
-│           │                                               │                 │
-│ Chunking  │◀──────────────────────────────────────────────│  Transcribe    │
-│ Output    │                                               │  Module        │
-└───────────┘                                               └─────────────────┘
-      ▲                                                              │
-      │                                                              ▼
-      │                                                     ┌─────────────────┐
-      │                                                     │                 │
-      └─────────────────────────────────────────────────────│  Chunking      │
-                                                            │  Module        │
-                                                            └─────────────────┘
-```
-
-### Deployment
-
-The infrastructure is deployed using Terraform modules for maintainability and reuse.
-
-To deploy:
-
-1. Navigate to the environment directory (e.g., `infra/environments/dev`)
-2. Run `terraform init` and `terraform plan`
-3. Deploy with `terraform apply`
+The above Mermaid diagram illustrates the complete workflow from file upload to final processing.
 
 ## Project Structure
 
-- **infra/**: Infrastructure as code
-  - `modules/`: Reusable infrastructure modules
-  - `environments/`: Environment-specific configurations
-
-- **modules/**: Individual service implementations
-  - `transcribe-module/`: Service for transcribing audio files
-
-- **samples/**: Sample media files for testing
-
-- **Configuration files:**
-  - `requirements.txt`: Python dependencies
-  - `dev-requirements.txt`: Development-specific Python dependencies
-  - `template.yaml`: SAM template for AWS resources
+```
+video-pipeline/
+├── infra/                  # Infrastructure as Code
+│   ├── bootstrap/         # Initial setup resources
+│   ├── environments/      # Environment configurations
+│   ├── modules/          # Reusable Terraform modules
+│   └── build/            # Build artifacts
+│
+├── modules/               # Service Implementations
+│   ├── transcribe-module/ # Audio/video transcription service
+│   └── chunking-module/   # Semantic chunking service
+│
+├── tests/                 # Test Suite
+│   ├── unit/             # Unit tests
+│   ├── integration/      # Integration tests
+│   └── e2e/              # End-to-end tests
+│
+├── samples/              # Sample media files
+├── events/              # Sample event payloads
+├── specs/               # API specifications
+└── .vscode/            # VS Code configurations
+```
 
 ## Prerequisites
 
-- Python 3.9+
-- AWS CLI
-- AWS SAM CLI
+- AWS Account with appropriate permissions
+- AWS CLI configured with credentials
+- Python 3.9 or higher
+- Terraform 1.0 or higher
 - Docker (for local testing)
+- Make (optional, for build scripts)
 
 ## Getting Started
 
-### Installation
+### Local Development Setup
 
-1. Clone the repository
-   ```
+1. Clone and setup the repository:
+   ```bash
    git clone <repository-url>
    cd video-pipeline
-   ```
-
-2. Set up a Python virtual environment
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies
-   ```
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    pip install -r requirements.txt
-   pip install -r dev-requirements.txt  # For development
+   pip install -r dev-requirements.txt
+   ```
+
+2. Configure AWS credentials:
+   ```bash
+   aws configure
+   # Follow prompts to input your AWS credentials
    ```
 
 ### Deployment
 
-To deploy the complete application, follow these steps:
-
-1. Build the application
-   ```
-   # Clean the build directory if it exists
+1. Build the modules:
+   ```bash
+   # Clean and create build directory
    rm -rf ./infra/build
-   
-   # Create a new build directory
    mkdir -p ./infra/build
    
-   # Package the Lambda function code
+   # Package Lambda functions
    zip -r ./infra/build/transcribe-module.zip ./modules/transcribe-module
+   zip -r ./infra/build/chunking-module.zip ./modules/chunking-module
    ```
 
-2. Deploy infrastructure using Terraform
-   ```
-   # Navigate to the desired environment directory
+2. Deploy infrastructure:
+   ```bash
    cd infra/environments/dev
-   
-   # Initialize Terraform
    terraform init
-   
-   # Plan the deployment to see what will change
    terraform plan -out=tfplan
-   
-   # Apply the changes
    terraform apply tfplan
    ```
 
-3. Verify deployment
-   ```
-   # List the created resources
+3. Verify deployment:
+   ```bash
    terraform output
-   ```
-
-4. To destroy the infrastructure when no longer needed
-   ```
-   terraform destroy
+   aws stepfunctions list-state-machines
    ```
 
 ## Testing
 
-### Setting Up the Test Environment
+### Running Tests
 
-1. Navigate to the transcribe module directory:
+1. Unit Tests:
    ```bash
-   cd modules/transcribe-module
+   python -m pytest tests/unit -v
    ```
 
-2. Create a virtual environment if it doesn't exist:
+2. Integration Tests:
    ```bash
-   python -m venv .venv
+   python -m pytest tests/integration -v
    ```
 
-3. Activate the virtual environment:
-   ```bash
-   # On macOS/Linux:
-   source .venv/bin/activate
-   
-   # On Windows:
-   .venv\Scripts\activate
-   ```
-
-4. Install test dependencies:
-   ```bash
-   pip install -r dev-requirements.txt
-   ```
-
-### Running the Test Suite
-
-Run the complete test suite (unit tests and integration tests):
-```bash
-python -m pytest -v tests/
-```
-
-Run only unit tests:
-```bash
-python -m pytest -v tests/ --exclude=tests/e2e --exclude=tests/integration
-```
-
-Run only integration tests:
-```bash
-python -m pytest -v tests/integration/
-```
-
-### Running End-to-End Tests
-
-The end-to-end tests verify the entire deployed pipeline on AWS.
-
-> **Note:** All module-level end-to-end tests have been consolidated into a single project-level test that validates the entire pipeline, including all modules.
-
-1. Navigate to the e2e test directory:
+3. End-to-End Tests:
    ```bash
    cd tests/e2e
-   ```
-
-2. Run the end-to-end test script:
-   ```bash
    ./run_e2e_test.sh --cleanup
    ```
 
-   Options:
-   - `--cleanup`: Clean up test files after completion
-   - `--file PATH`: Specify a custom sample file
-   - `--timeout SECONDS`: Set a custom timeout (default: 300 seconds)
-   - `--input-bucket BUCKET`: Specify the input S3 bucket
-   - `--output-bucket BUCKET`: Specify the output S3 bucket
-   - `--venv PATH`: Use a specific virtual environment
+### Test Options
 
-Note: End-to-end tests require active AWS credentials and a deployed infrastructure.
+- `--cleanup`: Remove test artifacts after completion
+- `--file PATH`: Use custom sample file
+- `--timeout SECONDS`: Custom timeout (default: 300s)
+- `--input-bucket BUCKET`: Specify input bucket
+- `--output-bucket BUCKET`: Specify output bucket
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## License
