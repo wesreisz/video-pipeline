@@ -14,4 +14,16 @@ variable "project_name" {
   description = "Name of the project"
   type        = string
   default     = "video-pipeline"
+}
+
+variable "openai_api_key" {
+  description = "API key for OpenAI service"
+  type        = string
+  sensitive   = true
+}
+
+variable "pinecone_api_key" {
+  description = "API key for Pinecone service"
+  type        = string
+  sensitive   = true
 } 

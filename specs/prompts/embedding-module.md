@@ -10,6 +10,7 @@ The project uses Terraform and currently has the following infrastructure define
 Update and incorporate the use of Pinecone in the module responsible for storing vector embeddings. Ensure integration with Pinecone's API following their documentation.
 
 Requirements:
+* Add this new modules to terraform and make it part of the step function state.
 * Add appropriate error handling and logging.
 * You should follow the project structure as shown in the role: .cursor/rules/project-structure.mdc.
 * Use the existing SQS queue to trigger the embedding-module lambda. Record it with sqs_queue_arn.
