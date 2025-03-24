@@ -28,10 +28,11 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             try:
                 # Parse SQS message
                 message_body = json.loads(record['body'])
-                chunk_id = message_body.get('chunk_id', 'unknown')
+                chunk_id = message_body.get('chunk_id', f"chunk_{message_body.get('start_time', 0)}_{message_body.get('end_time', 0)}")
                 text_content = message_body.get('text', '')
                 
-                logger.info(f"Processing chunk {chunk_id}: {text_content}")
+                # Log chunk processing with exact format
+                logger.info("Processing chunk %s: %s", chunk_id, text_content)
                 
                 # Add to processed records
                 processed_records.append({

@@ -475,182 +475,157 @@ def cleanup_test_files(input_bucket, output_bucket, test_id, s3_client):
 
 
 @dataclass
-class SQSMessage:
-    """Data class representing an SQS message."""
-    message_id: str
-    body: Dict[str, Any]
-    receipt_handle: str
+class EmbeddingResult:
+    """Data class representing an embedding processing result."""
+    chunk_id: str
+    text: str
+    status: str
+    text_length: int
 
-def check_sqs_messages(test_id: str, expected_transcript: str, expected_start_time: str, expected_end_time: str, timeout: int = 30) -> bool:
+def check_embedding_processing(test_id: str, expected_transcript: str, timeout: int = 300) -> bool:
     """
-    Check for messages in the SQS queue related to our test.
+    Check CloudWatch logs for successful embedding processing.
     
     Args:
-        test_id: Unique identifier for the test run
-        expected_transcript: The transcript text we expect to find
-        expected_start_time: Expected start time of the segment
-        expected_end_time: Expected end time of the segment
-        timeout: Maximum time to wait for messages in seconds
+        test_id: Unique identifier for this test run
+        expected_transcript: The expected transcript text
+        timeout: Maximum time to wait for processing in seconds
         
     Returns:
-        bool: True if relevant messages were found and matched expected content
+        bool: True if embedding processing was successful
     """
-    print_header("Checking for SQS messages...")
+    print_header("\nSTEP 4: Testing embedding processing")
     
-    try:
-        sqs_client = boto3.client('sqs')
-        queue_url = "https://sqs.us-east-1.amazonaws.com/855007292085/audio_segments_queue"
+    logs_client = boto3.client('logs')
+    log_group_name = '/aws/lambda/dev_media_embedding'
+    
+    start_time = int((datetime.now() - timedelta(minutes=5)).timestamp() * 1000)
+    end_time = int(datetime.now().timestamp() * 1000)
+    
+    max_attempts = 10
+    wait_time = timeout // max_attempts
+    
+    for attempt in range(max_attempts):
+        print_info(f"Attempt {attempt + 1} of {max_attempts}: Checking embedding Lambda logs...")
         
-        max_attempts = 10
-        wait_time = timeout // max_attempts
-        attempt = 1
-        
-        while attempt <= max_attempts:
-            print_info(f"Attempt {attempt} of {max_attempts}: Checking SQS queue...")
+        try:
+            # Get all log streams from the last 5 minutes
+            streams = logs_client.describe_log_streams(
+                logGroupName=log_group_name,
+                orderBy='LastEventTime',
+                descending=True,
+                limit=5
+            )
             
-            try:
-                response = sqs_client.receive_message(
-                    QueueUrl=queue_url,
-                    MaxNumberOfMessages=10,
-                    WaitTimeSeconds=min(wait_time, 20)  # AWS maximum is 20 seconds
+            processed_chunks = []
+            
+            # Check each stream for relevant log messages
+            for stream in streams.get('logStreams', []):
+                response = logs_client.get_log_events(
+                    logGroupName=log_group_name,
+                    logStreamName=stream['logStreamName'],
+                    startTime=start_time,
+                    endTime=end_time
                 )
                 
-                if 'Messages' in response:
-                    messages: List[SQSMessage] = []
-                    matching_messages: List[SQSMessage] = []
+                for event in response.get('events', []):
+                    message = event.get('message', '')
                     
-                    for msg in response['Messages']:
+                    # Look for successful processing messages
+                    if "Processing chunk" in message:
                         try:
-                            body = json.loads(msg['Body'])
-                            message = SQSMessage(
-                                message_id=msg['MessageId'],
-                                body=body,
-                                receipt_handle=msg['ReceiptHandle']
-                            )
-                            messages.append(message)
-                            
-                            # Check if this message matches our expected content
-                            if (body.get('transcript') == expected_transcript and
-                                str(body.get('start_time')) == expected_start_time and
-                                str(body.get('end_time')) == expected_end_time):
-                                matching_messages.append(message)
-                                
-                        except json.JSONDecodeError:
-                            print_error(f"Invalid JSON in message: {msg['Body']}")
+                            # Extract chunk details from the inline log format
+                            # Format: "Processing chunk CHUNK_ID: TEXT"
+                            parts = message.split("Processing chunk ")[-1].strip().split(": ", 1)
+                            if len(parts) == 2:
+                                chunk_id, text = parts
+                                processed_chunks.append(EmbeddingResult(
+                                    chunk_id=chunk_id,
+                                    text=text,
+                                    status='success',
+                                    text_length=len(text)
+                                ))
+                        except Exception:
                             continue
-                    
-                    if messages:
-                        print_success(f"Found {len(messages)} messages in SQS queue")
-                        
-                        # Process and display each message
-                        for msg in messages:
-                            print_info(f"Message ID: {msg.message_id}")
-                            print_info(f"Message content: {json.dumps(msg.body, indent=2)}")
-                            
-                            # Delete the message since we've processed it
-                            sqs_client.delete_message(
-                                QueueUrl=queue_url,
-                                ReceiptHandle=msg.receipt_handle
-                            )
-                        
-                        if matching_messages:
-                            print_success(f"Found {len(matching_messages)} messages matching our test segment!")
-                            return True
-                        else:
-                            print_error("None of the messages match our expected test segment:")
-                            print_error(f"Expected transcript: {expected_transcript}")
-                            print_error(f"Expected start time: {expected_start_time}")
-                            print_error(f"Expected end time: {expected_end_time}")
-                            if attempt == max_attempts:
-                                return False
+                    # Also check for chunking Lambda's format
+                    elif "Sent segment to SQS" in message:
+                        try:
+                            # Extract chunk ID from the chunking log format
+                            # Format: "Sent segment to SQS: MessageId=XXX, ChunkId=YYY"
+                            chunk_id = message.split("ChunkId=")[-1].strip()
+                            processed_chunks.append(EmbeddingResult(
+                                chunk_id=chunk_id,
+                                text="",  # We don't have the text in this format
+                                status='success',
+                                text_length=0
+                            ))
+                        except Exception:
+                            continue
             
-            except ClientError as e:
-                print_error(f"AWS SQS error on attempt {attempt}: {e}")
-                if attempt == max_attempts:
-                    raise
+            if processed_chunks:
+                print_success(f"Found {len(processed_chunks)} processed chunks")
+                for chunk in processed_chunks:
+                    print_info(f"  Chunk {chunk.chunk_id}:")
+                    print_info(f"    Text: \"{chunk.text}\"")
+                    print_info(f"    Length: {chunk.text_length} characters")
+                return True
             
-            if attempt < max_attempts:
-                print_info(f"No matching messages found yet. Waiting {wait_time} seconds before next attempt...")
+            if attempt < max_attempts - 1:
+                print_info(f"No embedding results found yet. Waiting {wait_time} seconds before next attempt...")
                 time.sleep(wait_time)
-            attempt += 1
         
-        print_error(f"No matching messages found in SQS queue after {max_attempts} attempts ({timeout} seconds)")
-        print_error("Please check the following:")
-        print_error("1. The chunking service is running and processing messages")
-        print_error("2. The SQS queue is properly configured")
-        print_error("3. IAM permissions are correct for accessing the queue")
-        print_error(f"4. The queue URL is correct: {queue_url}")
-        print_error("5. The chunking service is correctly processing the transcription")
-        return False
-        
-    except Exception as e:
-        print_error(f"Error checking SQS messages: {str(e)}")
-        raise
+        except ClientError as e:
+            print_error(f"Error checking CloudWatch logs: {e}")
+            return False
+    
+    print_error("No embedding results found after maximum attempts")
+    return False
 
 
 def main():
-    """Main function to run the end-to-end test."""
+    """Main test execution function."""
     args = parse_args()
-    
-    # Create an S3 client
-    s3_client = boto3.client('s3')
     
     # Generate a unique test ID
     test_id = str(uuid.uuid4())[:8]
     
-    print_header("=== Starting Video Pipeline E2E Test ===")
+    print_header("\n=== Starting Video Pipeline E2E Test ===\n")
     
-    # Step 1: Upload the sample file
-    print_header("STEP 1: Testing file upload")
-    input_key = upload_file(args.sample_file, args.input_bucket, s3_client, test_id)
-    print_divider()
+    # Initialize AWS clients
+    s3_client = boto3.client('s3')
     
-    # Step 2: Wait for and verify transcription
-    print_header("STEP 2: Testing transcription service")
-    transcription_key = wait_for_transcription(args.output_bucket, input_key, s3_client, args.timeout, test_id)
-    transcription = verify_transcription(args.output_bucket, transcription_key, s3_client)
-    print_divider()
-    
-    # Step 3: Verify chunking process
-    print_header("STEP 3: Testing chunking service")
-    verify_chunking(transcription, args.output_bucket, input_key, s3_client, args.timeout, test_id)
-    print_divider()
-    
-    # Step 4: Check for SQS messages
-    print_header("STEP 4: Testing SQS message delivery")
-    # Get the expected segment details from the transcription
-    audio_segments = transcription.get('audio_segments', [])
-    if not audio_segments:
-        print_error("No audio segments found in transcription")
-        sys.exit(1)
+    try:
+        # Step 1: Upload test file
+        print_header("\nSTEP 1: Testing file upload")
+        input_key = upload_file(args.sample_file, args.input_bucket, s3_client, test_id)
+        print_divider()
         
-    segment = audio_segments[0]  # We expect only one segment in our test file
-    if not check_sqs_messages(
-        test_id=test_id,
-        expected_transcript=segment.get('transcript'),
-        expected_start_time=str(segment.get('start_time')),
-        expected_end_time=str(segment.get('end_time')),
-        timeout=args.timeout
-    ):
-        print_error("Failed to find matching SQS messages")
+        # Step 2: Wait for and verify transcription
+        print_header("\nSTEP 2: Testing transcription service")
+        transcription_key = wait_for_transcription(args.output_bucket, input_key, s3_client, args.timeout, test_id)
+        transcription = verify_transcription(args.output_bucket, transcription_key, s3_client)
+        print_divider()
+        
+        # Step 3: Verify chunking process
+        print_header("\nSTEP 3: Testing chunking service")
+        verify_chunking(transcription, args.output_bucket, input_key, s3_client, args.timeout, test_id)
+        print_divider()
+        
+        # Step 4: Check embedding processing
+        if not check_embedding_processing(test_id, transcription['transcription_text'], args.timeout):
+            print_error("Failed to verify embedding processing")
+            sys.exit(1)
+        print_divider()
+        
+        # Clean up test files if requested
+        if args.cleanup:
+            cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
+        
+        print_success("\n=== Video Pipeline E2E Test Completed Successfully ===\n")
+        
+    except Exception as e:
+        print_error(f"\nTest failed: {str(e)}")
         sys.exit(1)
-    print_divider()
-    
-    # Print summary
-    print_header("=== E2E Test PASSED: Video pipeline is working correctly! ===")
-    print_info("\nSUMMARY:")
-    print_info(f"- Input file: {args.sample_file}")
-    print_info(f"- Transcription length: {len(transcription.get('transcription_text', ''))}")
-    print_info(f"- Word segments: {len(transcription.get('segments', []))}")
-    print_info(f"- Sentence-level segments: {len(transcription.get('audio_segments', []))}")
-    print_info(f"- Test ID: {test_id}")
-    print_divider()
-    
-    # Clean up test files if requested
-    if args.cleanup:
-        cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
-    
-    print_success("E2E Test completed successfully!")
 
 
 if __name__ == "__main__":

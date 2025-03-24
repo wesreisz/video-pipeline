@@ -5,6 +5,8 @@ import sys
 from typing import Dict, Any, List, Optional, TypedDict, Tuple
 import boto3
 from botocore.exceptions import ClientError
+import random
+import string
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.error_handler import handle_error
 
@@ -111,6 +113,16 @@ def get_s3_object(bucket: str, key: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         raise ValueError(f"File {key} is not valid JSON")
 
+def generate_chunk_id() -> str:
+    """
+    Generate a unique 5-character chunk ID using letters and numbers.
+    
+    Returns:
+        str: A 5-character unique identifier
+    """
+    chars = string.ascii_uppercase + string.digits
+    return ''.join(random.choices(chars, k=5))
+
 def send_to_sqs(audio_segments: List[AudioSegment], queue_url: Optional[str] = None) -> int:
     """
     Send audio segments to SQS queue.
@@ -128,12 +140,22 @@ def send_to_sqs(audio_segments: List[AudioSegment], queue_url: Optional[str] = N
     
     for segment in audio_segments:
         try:
+            # Get text content from either 'text' or 'transcript' field
+            text_content = segment.get('text', segment.get('transcript', ''))
+            
+            # Create message with unique chunk_id
+            message = {
+                'chunk_id': generate_chunk_id(),
+                'text': text_content,
+                'start_time': segment['start_time'],
+                'end_time': segment['end_time']
+            }
             response = sqs_client.send_message(
                 QueueUrl=queue_url,
-                MessageBody=json.dumps(segment)
+                MessageBody=json.dumps(message)
             )
             sent_count += 1
-            logger.info(f"Sent segment to SQS: MessageId={response['MessageId']}")
+            logger.info(f"Sent segment to SQS: MessageId={response['MessageId']}, ChunkId={message['chunk_id']}")
         except Exception as e:
             logger.error(f"Failed to send segment to SQS: {str(e)}")
             raise

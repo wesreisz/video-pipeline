@@ -6,8 +6,10 @@ from handlers.chunking_handler import (
     process_audio_segments,
     get_s3_object,
     send_to_sqs,
-    lambda_handler
+    lambda_handler,
+    generate_chunk_id
 )
+import string
 
 @pytest.fixture
 def sample_eventbridge_event():
@@ -129,6 +131,18 @@ def test_get_s3_object_invalid_json(mocker):
     with pytest.raises(ValueError, match="File test-key is not valid JSON"):
         get_s3_object("test-bucket", "test-key")
 
+def test_generate_chunk_id():
+    """Test generation of chunk IDs."""
+    # Test multiple generations to ensure format is correct
+    for _ in range(10):
+        chunk_id = generate_chunk_id()
+        assert len(chunk_id) == 5
+        assert all(c in string.ascii_uppercase + string.digits for c in chunk_id)
+    
+    # Test uniqueness
+    chunk_ids = [generate_chunk_id() for _ in range(100)]
+    assert len(set(chunk_ids)) > 95  # Allow for small chance of duplicates
+
 def test_send_to_sqs_success(mocker, sample_transcription_result):
     """Test successful SQS message sending."""
     mock_sqs = mocker.patch("boto3.client")
@@ -136,9 +150,27 @@ def test_send_to_sqs_success(mocker, sample_transcription_result):
         'MessageId': 'test_message_id_1'
     }
     
+    # Capture the messages being sent
+    sent_messages = []
+    def mock_send_message(**kwargs):
+        sent_messages.append(json.loads(kwargs['MessageBody']))
+        return {'MessageId': 'test_message_id_1'}
+    
+    mock_sqs.return_value.send_message.side_effect = mock_send_message
+    
     segments = sample_transcription_result["audio_segments"]
     result = send_to_sqs(segments, "test-queue-url")
+    
+    # Verify the number of messages sent
     assert result == 2
+    
+    # Verify message format
+    for msg in sent_messages:
+        assert 'chunk_id' in msg
+        assert len(msg['chunk_id']) == 5
+        assert 'text' in msg
+        assert 'start_time' in msg
+        assert 'end_time' in msg
 
 def test_send_to_sqs_failure(mocker, sample_transcription_result):
     """Test SQS message sending failure."""
