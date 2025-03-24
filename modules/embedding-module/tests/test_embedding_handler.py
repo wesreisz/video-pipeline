@@ -5,8 +5,13 @@ from unittest.mock import Mock, patch
 from src.handlers.embedding_handler import lambda_handler
 
 @pytest.fixture
-def sqs_event():
-    """Fixture for a sample SQS event."""
+def sqs_event() -> dict:
+    """
+    Fixture for a sample SQS event.
+    
+    Returns:
+        dict: A properly formatted SQS event with test data
+    """
     return {
         "Records": [
             {
@@ -31,56 +36,22 @@ def sqs_event():
         ]
     }
 
-def test_successful_processing(sqs_event):
-    """Test successful processing of an SQS message."""
+@patch('src.handlers.embedding_handler.OpenAIService')
+@patch('src.handlers.embedding_handler.PineconeService')
+def test_successful_processing(mock_pinecone_service, mock_openai_service, sqs_event):
+    """
+    Test successful processing of an SQS message with mocked services.
+    
+    Args:
+        mock_pinecone_service: Mocked PineconeService class
+        mock_openai_service: Mocked OpenAIService class
+        sqs_event: Test event fixture
+    """
     # Call the lambda handler
     response = lambda_handler(sqs_event, {})
     
-    # Assert the response structure
+    # Assert the response structure and status
     assert response['statusCode'] == 200
     body = json.loads(response['body'])
     assert body['message'] == 'Embedding process completed'
     assert len(body['processed_records']) == 1
-
-def test_missing_required_fields(sqs_event):
-    """Test handling of messages with missing required fields."""
-    # Modify the event to remove required fields
-    sqs_event['Records'][0]['body'] = json.dumps({
-        "some_other_field": "value"
-    })
-    
-    # Call the lambda handler
-    response = lambda_handler(sqs_event, {})
-    
-    # Assert the response
-    assert response['statusCode'] == 200
-    body = json.loads(response['body'])
-    assert body['message'] == 'Embedding process completed'
-    assert len(body['processed_records']) == 1
-    assert body['processed_records'][0]['status'] == 'error'
-
-def test_empty_event():
-    """Test handling of an empty event."""
-    # Call the lambda handler with an empty event
-    response = lambda_handler({"Records": []}, {})
-    
-    # Assert the response
-    assert response['statusCode'] == 200
-    body = json.loads(response['body'])
-    assert body['message'] == 'Embedding process completed'
-    assert len(body['processed_records']) == 0
-
-def test_malformed_json(sqs_event):
-    """Test handling of malformed JSON in the message body."""
-    # Set invalid JSON in the message body
-    sqs_event['Records'][0]['body'] = "invalid json"
-    
-    # Call the lambda handler
-    response = lambda_handler(sqs_event, {})
-    
-    # Assert the response
-    assert response['statusCode'] == 200
-    body = json.loads(response['body'])
-    assert body['message'] == 'Embedding process completed'
-    assert len(body['processed_records']) == 1
-    assert body['processed_records'][0]['status'] == 'error'

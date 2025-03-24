@@ -35,12 +35,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             try:
                 # Parse SQS message
                 message_body = json.loads(record['body'])
+                chunk_id = message_body.get('chunk_id', 'unknown')
                 logger.info("Processing message: %s", message_body)
                 
                 # Extract text content from message
                 text_content = message_body.get('text', '')
                 
                 logger.info("Successfully processed chunk: %s", text_content)
+                processed_records.append({
+                    'chunk_id': chunk_id,
+                    'status': 'success'
+                })
                 
             except Exception as e:
                 logger.error("Error processing record: %s", str(e), exc_info=True)
