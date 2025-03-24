@@ -1,18 +1,34 @@
 ```mermaid
-graph TD
-    A[Upload to S3] --> B[CloudTrail]
-    B --> C[EventBridge]
-    C --> D[Step Functions]
-    D --> E[Transcribe Module]
-    E --> F[Wait for Completion]
-    F --> G[Chunking Module]
-    G --> H[Final Output]
-    
-    style A fill:#f9f,stroke:#333,stroke-width:2px
-    style D fill:#bbf,stroke:#333,stroke-width:2px
-    style E fill:#bfb,stroke:#333,stroke-width:2px
-    style G fill:#bfb,stroke:#333,stroke-width:2px
-    style H fill:#ff9,stroke:#333,stroke-width:2px
+flowchart TD
+    A["User"] -- Uploads file --> B["Amazon S3"]
+
+    B -- Triggers --> L1[Transcription]
+    subgraph L1["Transcription"]
+         D["Transcription Module"]
+         E["AWS Transcribe Service"]
+         D -- Uses --> E
+    end
+    D -- Writes transcription back to --> B
+
+    B -- Notifies --> L2[Chucking]
+    subgraph L2["Chucking"]
+         J["Text Extraction Module"]
+    end
+    J -- Loads text chunks into --> G["SQS Queue"]
+
+    G -- Invokes --> EM[Embedding]
+    subgraph EM["Embedding"]
+         H["Embedding Module"]
+         I["Pinecone Vector DB"]
+         H -- Stores embeddings in --> I
+    end
+
+    LLM["LLM"] -- Accesses --> I
+
+    A@{ shape: sm-circ}
+    style H fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style I fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style A color:#000000
 ```
 
 # Video Pipeline
