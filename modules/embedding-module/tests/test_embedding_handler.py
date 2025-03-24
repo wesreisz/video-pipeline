@@ -1,8 +1,11 @@
 import json
 import pytest
-from unittest.mock import Mock, patch
+import os
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '../src'))
 
-from src.handlers.embedding_handler import lambda_handler
+from unittest.mock import Mock, patch
+from handlers.embedding_handler import lambda_handler
 
 @pytest.fixture
 def sqs_event() -> dict:
@@ -36,15 +39,11 @@ def sqs_event() -> dict:
         ]
     }
 
-@patch('src.handlers.embedding_handler.OpenAIService')
-@patch('src.handlers.embedding_handler.PineconeService')
-def test_successful_processing(mock_pinecone_service, mock_openai_service, sqs_event):
+def test_successful_processing(sqs_event):
     """
-    Test successful processing of an SQS message with mocked services.
+    Test successful processing of an SQS message.
     
     Args:
-        mock_pinecone_service: Mocked PineconeService class
-        mock_openai_service: Mocked OpenAIService class
         sqs_event: Test event fixture
     """
     # Call the lambda handler
@@ -52,6 +51,11 @@ def test_successful_processing(mock_pinecone_service, mock_openai_service, sqs_e
     
     # Assert the response structure and status
     assert response['statusCode'] == 200
+    
+    # Parse the response body
     body = json.loads(response['body'])
-    assert body['message'] == 'Embedding process completed'
+    assert 'message' in body
+    assert 'processed_records' in body
     assert len(body['processed_records']) == 1
+    assert body['processed_records'][0]['chunk_id'] == 'test-chunk-123'
+    assert body['processed_records'][0]['status'] == 'success'

@@ -2,10 +2,7 @@ import json
 import logging
 import os
 from typing import Dict, Any, List
-
-from ..services.openai_service import OpenAIService
-from ..services.pinecone_service import PineconeService
-from ..utils.logger import setup_logger
+from utils.logger import setup_logger
 
 # Initialize logger
 logger = setup_logger(__name__)
@@ -25,10 +22,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         logger.info("Starting embedding process")
         logger.debug("Received event: %s", json.dumps(event))
         
-        # Initialize services
-        #openai_service = OpenAIService()
-        #pinecone_service = PineconeService()
-        
         # Process each record in the SQS batch
         processed_records = []
         for record in event.get('Records', []):
@@ -36,15 +29,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 # Parse SQS message
                 message_body = json.loads(record['body'])
                 chunk_id = message_body.get('chunk_id', 'unknown')
-                logger.info("Processing message: %s", message_body)
-                
-                # Extract text content from message
                 text_content = message_body.get('text', '')
                 
-                logger.info("Successfully processed chunk: %s", text_content)
+                logger.info(f"Processing chunk {chunk_id}: {text_content}")
+                
+                # Add to processed records
                 processed_records.append({
                     'chunk_id': chunk_id,
-                    'status': 'success'
+                    'status': 'success',
+                    'text_length': len(text_content)
                 })
                 
             except Exception as e:
