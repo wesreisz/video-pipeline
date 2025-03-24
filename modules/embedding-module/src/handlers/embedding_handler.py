@@ -26,8 +26,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         logger.debug("Received event: %s", json.dumps(event))
         
         # Initialize services
-        openai_service = OpenAIService()
-        pinecone_service = PineconeService()
+        #openai_service = OpenAIService()
+        #pinecone_service = PineconeService()
         
         # Process each record in the SQS batch
         processed_records = []
@@ -39,29 +39,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 
                 # Extract text content from message
                 text_content = message_body.get('text', '')
-                chunk_id = message_body.get('chunk_id', '')
                 
-                if not text_content or not chunk_id:
-                    logger.error("Missing required fields in message: %s", message_body)
-                    processed_records.append({
-                        'chunk_id': chunk_id or 'unknown',
-                        'status': 'error',
-                        'error': 'Missing required fields: text or chunk_id'
-                    })
-                    continue
-                
-                # Generate embeddings using OpenAI
-                embeddings = openai_service.create_embedding(text_content)
-                
-                # Store embeddings in Pinecone
-                pinecone_service.upsert_embeddings(chunk_id, embeddings, {'text': text_content})
-                
-                processed_records.append({
-                    'chunk_id': chunk_id,
-                    'status': 'success'
-                })
-                
-                logger.info("Successfully processed chunk: %s", chunk_id)
+                logger.info("Successfully processed chunk: %s", text_content)
                 
             except Exception as e:
                 logger.error("Error processing record: %s", str(e), exc_info=True)

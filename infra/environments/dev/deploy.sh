@@ -20,8 +20,10 @@ BUILD_DIR="$INFRA_DIR/build"
 MODULES_DIR="$PROJECT_ROOT/modules"
 TRANSCRIBE_MODULE_DIR="$MODULES_DIR/transcribe-module"
 CHUNKING_MODULE_DIR="$MODULES_DIR/chunking-module"
+EMBEDDING_MODULE_DIR="$MODULES_DIR/embedding-module"
 TRANSCRIBE_VENV_DIR="$TRANSCRIBE_MODULE_DIR/.venv"
 CHUNKING_VENV_DIR="$CHUNKING_MODULE_DIR/.venv"
+EMBEDDING_VENV_DIR="$EMBEDDING_MODULE_DIR/.venv"
 
 # Display header
 echo -e "${BOLD}===== Video Pipeline Dev Deployment Script =====${NO_COLOR}"
@@ -65,6 +67,25 @@ activate_chunking_venv() {
     pip install -q -r "$CHUNKING_MODULE_DIR/dev-requirements.txt"
 }
 
+# Function to activate virtual environment for embedding module
+activate_embedding_venv() {
+    if [ ! -d "$EMBEDDING_VENV_DIR" ]; then
+        echo -e "\n${YELLOW}Creating virtual environment for embedding module...${NO_COLOR}"
+        cd "$EMBEDDING_MODULE_DIR"
+        python -m venv .venv
+    fi
+    
+    echo -e "\n${YELLOW}Activating virtual environment for embedding module...${NO_COLOR}"
+    source "$EMBEDDING_VENV_DIR/bin/activate"
+    
+    echo -e "\n${YELLOW}Updating pip to latest version...${NO_COLOR}"
+    python -m pip install --upgrade pip > /dev/null 2>&1
+    
+    echo -e "\n${YELLOW}Installing dependencies for embedding module...${NO_COLOR}"
+    pip install -q -r "$EMBEDDING_MODULE_DIR/requirements.txt"
+    pip install -q -r "$EMBEDDING_MODULE_DIR/dev-requirements.txt"
+}
+
 # Function to run tests for transcribe module
 run_transcribe_tests() {
     echo -e "\n${BOLD}===== Running transcribe module tests =====${NO_COLOR}"
@@ -102,6 +123,27 @@ run_chunking_tests() {
     echo -e "\n${GREEN}All chunking module tests passed!${NO_COLOR}"
 }
 
+# Function to run tests for embedding module
+run_embedding_tests() {
+    echo -e "\n${BOLD}===== Running embedding module tests =====${NO_COLOR}"
+    cd "$EMBEDDING_MODULE_DIR"
+    
+    # Run tests with pytest and coverage
+    echo -e "\n${YELLOW}Running tests for embedding module...${NO_COLOR}"
+    coverage_output=$(python -m pytest tests/ -v --cov=src.handlers --cov-report=term-missing)
+    exit_code=$?
+    
+    if [ $exit_code -ne 0 ]; then
+        echo -e "\n${RED}Embedding module tests failed. Aborting deployment.${NO_COLOR}"
+        exit 1
+    fi
+    
+    # Extract coverage percentage
+    coverage_percentage=$(echo "$coverage_output" | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
+    
+    echo -e "\n${GREEN}All embedding module tests passed!${NO_COLOR}"
+}
+
 # Function to build the Lambda packages
 build_lambda_packages() {
     echo -e "\n${BOLD}===== Building Lambda packages =====${NO_COLOR}"
@@ -122,6 +164,13 @@ build_lambda_packages() {
     zip -r "$BUILD_DIR/chunking_lambda.zip" "modules/chunking-module/src/"
     
     echo -e "\n${GREEN}Chunking Lambda package built successfully: ${BUILD_DIR}/chunking_lambda.zip${NO_COLOR}"
+
+    # Create a zip package for the embedding Lambda function
+    echo -e "\n${YELLOW}Creating embedding module zip package...${NO_COLOR}"
+    cd "$PROJECT_ROOT"
+    zip -r "$BUILD_DIR/embedding_lambda.zip" "modules/embedding-module/src/"
+    
+    echo -e "\n${GREEN}Embedding Lambda package built successfully: ${BUILD_DIR}/embedding_lambda.zip${NO_COLOR}"
 }
 
 # Function to deploy using Terraform
@@ -183,9 +232,10 @@ check_aws_resource_readiness() {
         # Get Lambda function names from Terraform output
         local transcribe_function=$(terraform output -raw transcribe_lambda_function_name)
         local chunking_function=$(terraform output -raw chunking_lambda_function_name)
+        local embedding_function=$(terraform output -raw embedding_lambda_function_name)
         
         # Check each Lambda function
-        for func in "$transcribe_function" "$chunking_function"; do
+        for func in "$transcribe_function" "$chunking_function" "$embedding_function"; do
             echo -e "Checking Lambda function: $func"
             if ! aws lambda get-function --function-name "$func" --query 'Configuration.State' | grep -q "Active"; then
                 lambda_ready=false
@@ -241,6 +291,9 @@ main() {
 
     activate_chunking_venv
     run_chunking_tests
+
+    activate_embedding_venv
+    run_embedding_tests
     
     # Step 2: Build Lambda packages
     build_lambda_packages

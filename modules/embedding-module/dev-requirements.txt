@@ -13,7 +13,6 @@ isort>=5.12.0
 
 # Type stubs
 types-boto3
-types-python-json-logger
 types-setuptools
 
 # Development tools

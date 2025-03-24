@@ -311,7 +311,7 @@ resource "aws_sfn_state_machine" "video_processing" {
         Type = "Task"
         Resource = module.lambda_embedding.function_arn
         Parameters = {
-          "detail.$": "$.chunkResult.detail"
+          "detail.$": "$.chunkResult.body"
         }
         ResultPath = "$.embeddingResult"
         Next = "EmbeddingSucceeded?"
