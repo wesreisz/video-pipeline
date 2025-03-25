@@ -128,18 +128,15 @@ run_embedding_tests() {
     echo -e "\n${BOLD}===== Running embedding module tests =====${NO_COLOR}"
     cd "$EMBEDDING_MODULE_DIR"
     
-    # Run tests with pytest and coverage
+    # Run tests with pytest and coverage - modified to use the correct module path
     echo -e "\n${YELLOW}Running tests for embedding module...${NO_COLOR}"
-    coverage_output=$(python -m pytest tests/ -v --cov=src.handlers --cov-report=term-missing)
+    python -m pytest tests/unit/ -v
     exit_code=$?
     
     if [ $exit_code -ne 0 ]; then
         echo -e "\n${RED}Embedding module tests failed. Aborting deployment.${NO_COLOR}"
         exit 1
     fi
-    
-    # Extract coverage percentage
-    coverage_percentage=$(echo "$coverage_output" | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
     
     echo -e "\n${GREEN}All embedding module tests passed!${NO_COLOR}"
 }

@@ -7,6 +7,44 @@ alwaysApply: true
 
 This project is organized as follows:
 
+## Import Conventions
+
+### Module-Level Imports
+When importing within a module (e.g., embedding-module, chunking-module), follow these rules:
+
+1. **Never use relative imports** (avoid `..` or `.`):
+   ```python
+   # ❌ DON'T use relative imports
+   from ..utils.logger import setup_logger
+   from .handlers import some_handler
+   
+   # ✅ DO use absolute imports from module root
+   from utils.logger import setup_logger
+   from handlers import some_handler
+   ```
+
+2. **Never include `src` in import paths**:
+   ```python
+   # ❌ DON'T include src in paths
+   from src.services.openai_service import OpenAIService
+   
+   # ✅ DO use direct imports from module root
+   from services.openai_service import OpenAIService
+   ```
+
+3. **Module root is automatically added to PYTHONPATH**:
+   - Each module's `src` directory is added to PYTHONPATH in `conftest.py`
+   - This allows imports to work from the module root without relative paths
+   - Example `conftest.py` setup:
+     ```python
+     import os
+     import sys
+     import pytest
+
+     # Add the src directory to the Python path
+     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+     ```
+
 ## Root Directory Structure
 
 - `infra/`: Infrastructure as code
@@ -33,7 +71,6 @@ This structure follows a modular design pattern where:
 
 Each modules should be structured:
 - <name>-module
-  - docs
   - specs - llm prompts
   - src - source code
     - handlers
