@@ -23,6 +23,8 @@ class OpenAIServiceError(Exception):
 class OpenAIService:
     """Service for interacting with OpenAI API to generate embeddings."""
     
+    DEFAULT_MODEL = "text-embedding-ada-002"  # Base model name without version
+    
     def __init__(self, client: Optional[OpenAI] = None):
         """
         Initialize OpenAI service.
@@ -41,13 +43,28 @@ class OpenAIService:
             raise OpenAIServiceError("OpenAI API key not configured")
         
         try:
-            self.client = OpenAI(api_key=self.api_key)
+            # Configure the client with potential custom settings
+            client_kwargs = {
+                "api_key": self.api_key,
+            }
+            
+            # Add optional configuration if environment variables are set
+            if base_url := os.environ.get('OPENAI_BASE_URL'):
+                client_kwargs['base_url'] = base_url
+                logger.info("Using custom base URL: %s", base_url)
+            
+            if org_id := os.environ.get('OPENAI_ORG_ID'):
+                client_kwargs['organization'] = org_id
+                logger.info("Using organization ID: %s", org_id)
+                
+            self.client = OpenAI(**client_kwargs)
             logger.info("OpenAI client initialized successfully")
+            
         except Exception as e:
             logger.error("Failed to initialize OpenAI client: %s", str(e))
             raise OpenAIServiceError(f"Failed to initialize OpenAI client: {str(e)}")
     
-    def create_embedding(self, text: str, model: str = "text-embedding-ada-002") -> EmbeddingResponse:
+    def create_embedding(self, text: str, model: str = DEFAULT_MODEL) -> EmbeddingResponse:
         """
         Create embeddings for the given text using OpenAI's API.
         
@@ -76,9 +93,12 @@ class OpenAIService:
             # Extract the first embedding (we only sent one text)
             embedding_data = response.data[0]
             
+            # Get the actual model version from the response
+            actual_model = getattr(response, 'model', model)
+            
             return EmbeddingResponse(
                 embedding=embedding_data.embedding,
-                model=model,
+                model=actual_model,  # Use the actual model version from response
                 usage={
                     "prompt_tokens": response.usage.prompt_tokens,
                     "total_tokens": response.usage.total_tokens
