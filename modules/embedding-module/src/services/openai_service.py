@@ -3,8 +3,7 @@ from typing import Dict, List, Optional
 import logging
 from dataclasses import dataclass
 
-import openai
-from openai import OpenAI
+from openai import OpenAI, APITimeoutError, APIError
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -37,15 +36,22 @@ class OpenAIService:
             logger.info("Using provided OpenAI client")
             return
             
+        # Get required configuration
         self.api_key = os.environ.get('OPENAI_API_KEY')
         if not self.api_key:
             logger.error("OPENAI_API_KEY not found in environment variables")
             raise OpenAIServiceError("OpenAI API key not configured")
         
+        # Get optional configuration
+        timeout = float(os.environ.get('OPENAI_TIMEOUT', '20.0'))
+        max_retries = int(os.environ.get('OPENAI_MAX_RETRIES', '3'))
+        
         try:
-            # Configure the client with potential custom settings
+            # Configure the client with settings
             client_kwargs = {
                 "api_key": self.api_key,
+                "timeout": timeout,
+                "max_retries": max_retries
             }
             
             # Add optional configuration if environment variables are set
@@ -58,7 +64,8 @@ class OpenAIService:
                 logger.info("Using organization ID: %s", org_id)
                 
             self.client = OpenAI(**client_kwargs)
-            logger.info("OpenAI client initialized successfully")
+            logger.info("OpenAI client initialized with timeout=%s, max_retries=%s", 
+                       timeout, max_retries)
             
         except Exception as e:
             logger.error("Failed to initialize OpenAI client: %s", str(e))
@@ -70,7 +77,7 @@ class OpenAIService:
         
         Args:
             text: The text to create embeddings for
-            model: The model to use for embedding creation (default: text-embedding-ada-002)
+            model: The model to use for embedding creation
             
         Returns:
             EmbeddingResponse containing the embedding vector and usage statistics
@@ -98,14 +105,17 @@ class OpenAIService:
             
             return EmbeddingResponse(
                 embedding=embedding_data.embedding,
-                model=actual_model,  # Use the actual model version from response
+                model=actual_model,
                 usage={
                     "prompt_tokens": response.usage.prompt_tokens,
                     "total_tokens": response.usage.total_tokens
                 }
             )
             
-        except openai.APIError as e:
+        except APITimeoutError as e:
+            logger.error("OpenAI API timeout: %s", str(e))
+            raise OpenAIServiceError(f"OpenAI API timeout: {str(e)}")
+        except APIError as e:
             logger.error("OpenAI API error: %s", str(e))
             raise OpenAIServiceError(f"OpenAI API error: {str(e)}")
         except Exception as e:
