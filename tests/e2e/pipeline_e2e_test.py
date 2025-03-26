@@ -84,8 +84,23 @@ def upload_file(file_path, bucket, s3_client, test_id):
         # Always upload to the media directory with the test ID as a suffix
         unique_file_name = f"media/{base_name}_{test_id}{extension}"
         
-        print_info(f"Uploading {file_path} to s3://{bucket}/{unique_file_name}...")
-        s3_client.upload_file(file_path, bucket, unique_file_name)
+        # Add test metadata
+        metadata = {
+            'speaker': 'Test Speaker',
+            'title': 'Test Presentation',
+            'track': 'Test Track',
+            'day': 'Monday'
+        }
+        
+        print_info(f"Uploading {file_path} to s3://{bucket}/{unique_file_name} with metadata...")
+        s3_client.upload_file(
+            file_path, 
+            bucket, 
+            unique_file_name,
+            ExtraArgs={
+                'Metadata': metadata
+            }
+        )
         print_success(f"File uploaded successfully to s3://{bucket}/{unique_file_name}")
         return unique_file_name
     except ClientError as e:
@@ -164,12 +179,32 @@ def verify_transcription(bucket, key, s3_client):
         transcript_text = transcription['transcription_text']
         segments = transcription.get('segments', [])
         audio_segments = transcription.get('audio_segments', [])
+        metadata = transcription.get('metadata', {})
         
         # Output verification results
         print_success("Transcription verification passed!")
         print_info(f"Transcription text: \"{transcript_text}\"")
         print_info(f"Number of word-level segments: {len(segments)}")
         print_info(f"Number of sentence-level audio segments: {len(audio_segments)}")
+        
+        # Verify metadata
+        expected_metadata = {
+            'speaker': 'Test Speaker',
+            'title': 'Test Presentation',
+            'track': 'Test Track',
+            'day': 'Monday'
+        }
+        
+        if metadata:
+            print_info("\nVerifying metadata:")
+            for key, expected_value in expected_metadata.items():
+                actual_value = metadata.get(key)
+                if actual_value == expected_value:
+                    print_success(f"  {key}: {actual_value}")
+                else:
+                    print_error(f"  {key}: Expected '{expected_value}', got '{actual_value}'")
+        else:
+            print_error("No metadata found in transcription output")
         
         # Display sentence-level audio segments if available
         if audio_segments:
@@ -483,102 +518,66 @@ class EmbeddingResult:
     text_length: int
 
 def check_embedding_processing(test_id: str, expected_transcript: str, timeout: int = 300) -> bool:
-    """
-    Check CloudWatch logs for successful embedding processing.
-    
-    Args:
-        test_id: Unique identifier for this test run
-        expected_transcript: The expected transcript text
-        timeout: Maximum time to wait for processing in seconds
-        
-    Returns:
-        bool: True if embedding processing was successful
-    """
+    """Check if the embedding processing completed successfully by monitoring Step Functions execution."""
     print_header("\nSTEP 4: Testing embedding processing")
-    
-    logs_client = boto3.client('logs')
-    log_group_name = '/aws/lambda/dev_media_embedding'
-    
-    start_time = int((datetime.now() - timedelta(minutes=5)).timestamp() * 1000)
-    end_time = int(datetime.now().timestamp() * 1000)
     
     max_attempts = 10
     wait_time = timeout // max_attempts
     
+    sfn_client = boto3.client('stepfunctions')
+    
+    # Find the state machine ARN
+    response = sfn_client.list_state_machines()
+    state_machine_arn = None
+    
+    for machine in response.get('stateMachines', []):
+        if 'video_processing' in machine.get('name', '').lower():
+            state_machine_arn = machine.get('stateMachineArn')
+            break
+    
+    if not state_machine_arn:
+        print_error("Could not find the video processing state machine")
+        return False
+    
+    # Check executions until we find success or timeout
     for attempt in range(max_attempts):
-        print_info(f"Attempt {attempt + 1} of {max_attempts}: Checking embedding Lambda logs...")
+        response = sfn_client.list_executions(
+            stateMachineArn=state_machine_arn,
+            maxResults=10
+        )
         
-        try:
-            # Get all log streams from the last 5 minutes
-            streams = logs_client.describe_log_streams(
-                logGroupName=log_group_name,
-                orderBy='LastEventTime',
-                descending=True,
-                limit=5
+        for execution in response.get('executions', []):
+            exec_details = sfn_client.describe_execution(
+                executionArn=execution.get('executionArn')
             )
             
-            processed_chunks = []
-            
-            # Check each stream for relevant log messages
-            for stream in streams.get('logStreams', []):
-                response = logs_client.get_log_events(
-                    logGroupName=log_group_name,
-                    logStreamName=stream['logStreamName'],
-                    startTime=start_time,
-                    endTime=end_time
-                )
-                
-                for event in response.get('events', []):
-                    message = event.get('message', '')
+            try:
+                input_data = json.loads(exec_details.get('input', '{}'))
+                if test_id in str(input_data):
+                    status = exec_details.get('status')
                     
-                    # Look for successful processing messages
-                    if "Processing chunk" in message:
-                        try:
-                            # Extract chunk details from the inline log format
-                            # Format: "Processing chunk CHUNK_ID: TEXT"
-                            parts = message.split("Processing chunk ")[-1].strip().split(": ", 1)
-                            if len(parts) == 2:
-                                chunk_id, text = parts
-                                processed_chunks.append(EmbeddingResult(
-                                    chunk_id=chunk_id,
-                                    text=text,
-                                    status='success',
-                                    text_length=len(text)
-                                ))
-                        except Exception:
-                            continue
-                    # Also check for chunking Lambda's format
-                    elif "Sent segment to SQS" in message:
-                        try:
-                            # Extract chunk ID from the chunking log format
-                            # Format: "Sent segment to SQS: MessageId=XXX, ChunkId=YYY"
-                            chunk_id = message.split("ChunkId=")[-1].strip()
-                            processed_chunks.append(EmbeddingResult(
-                                chunk_id=chunk_id,
-                                text="",  # We don't have the text in this format
-                                status='success',
-                                text_length=0
-                            ))
-                        except Exception:
-                            continue
-            
-            if processed_chunks:
-                print_success(f"Found {len(processed_chunks)} processed chunks")
-                for chunk in processed_chunks:
-                    print_info(f"  Chunk {chunk.chunk_id}:")
-                    print_info(f"    Text: \"{chunk.text}\"")
-                    print_info(f"    Length: {chunk.text_length} characters")
-                return True
-            
-            if attempt < max_attempts - 1:
-                print_info(f"No embedding results found yet. Waiting {wait_time} seconds before next attempt...")
-                time.sleep(wait_time)
+                    if status == 'SUCCEEDED':
+                        print_success(f"Step Functions execution completed successfully: {execution.get('executionArn')}")
+                        return True
+                    elif status == 'FAILED':
+                        print_error(f"Step Functions execution failed: {execution.get('executionArn')}")
+                        # Get the error details
+                        if exec_details.get('error'):
+                            print_error(f"Error: {exec_details.get('error')}")
+                            print_error(f"Cause: {exec_details.get('cause')}")
+                        return False
+                    elif status == 'RUNNING':
+                        print_info(f"Step Functions execution still running. Waiting {wait_time} seconds before next attempt...")
+                        time.sleep(wait_time)
+                        break
+            except json.JSONDecodeError:
+                continue
         
-        except ClientError as e:
-            print_error(f"Error checking CloudWatch logs: {e}")
+        if attempt == max_attempts - 1:
+            print_error("Embedding processing did not complete within the timeout period")
             return False
     
-    print_error("No embedding results found after maximum attempts")
+    print_error("Could not find matching Step Functions execution")
     return False
 
 

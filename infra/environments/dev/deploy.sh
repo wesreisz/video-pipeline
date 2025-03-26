@@ -145,6 +145,18 @@ run_embedding_tests() {
 build_lambda_packages() {
     echo -e "\n${BOLD}===== Building Lambda packages =====${NO_COLOR}"
     
+    # Create Lambda layer first
+    echo -e "\n${YELLOW}Creating Lambda layer...${NO_COLOR}"
+    cd /Users/wesleyreisz/work/qcon/video-pipeline/modules/embedding-module/layer
+    
+    # Clean up any existing files
+    echo -e "\n${YELLOW}Cleaning up existing layer files...${NO_COLOR}"
+    rm -rf python/ create_layer/ layer_content.zip
+    
+    # Make scripts executable and rebuild layer
+    chmod +x 1-install.sh 2-package.sh
+    ./1-install.sh && ./2-package.sh
+    
     # Create build directory if it doesn't exist
     mkdir -p "$BUILD_DIR"
     
@@ -205,10 +217,10 @@ check_aws_resources() {
     
     # Check Step Functions state machine
     echo -e "\n${YELLOW}Checking Step Functions state machine...${NO_COLOR}"
-    aws stepfunctions describe-state-machine --state-machine-arn "$(terraform output -raw sfn_state_machine_arn)" || {
+    if ! aws stepfunctions describe-state-machine --state-machine-arn "$(terraform output -raw sfn_state_machine_arn)" --query 'status' --output text | grep -q "ACTIVE"; then
         echo -e "\n${RED}Step Functions state machine 'dev_video_processing' is not accessible.${NO_COLOR}"
         exit 1
-    }
+    fi
     echo -e "${GREEN}Step Functions state machine is accessible.${NO_COLOR}"
 }
 
@@ -245,7 +257,7 @@ check_aws_resource_readiness() {
         local sfn_arn=$(terraform output -raw sfn_state_machine_arn)
         local sfn_ready=false
         
-        if aws stepfunctions describe-state-machine --state-machine-arn "$sfn_arn" --query 'status' | grep -q "ACTIVE"; then
+        if aws stepfunctions describe-state-machine --state-machine-arn "$sfn_arn" --query 'status' --output text 2>/dev/null | grep -q "ACTIVE"; then
             sfn_ready=true
         fi
         

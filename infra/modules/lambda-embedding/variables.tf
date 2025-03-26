@@ -41,4 +41,15 @@ variable "tags" {
   description = "A map of tags to add to all resources"
   type        = map(string)
   default     = {}
+}
+
+variable "secrets_access_policy_arn" {
+  description = "ARN of the IAM policy for accessing secrets"
+  type        = string
+}
+
+variable "max_concurrency" {
+  description = "Maximum number of concurrent Lambda instances for SQS processing (min: 2, max: 1000)"
+  type        = number
+  default     = 10
 } 

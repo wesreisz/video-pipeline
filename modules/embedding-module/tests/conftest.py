@@ -32,7 +32,6 @@ def setup_test_environment():
     # Only set test environment variables if we're not running live tests
     if not os.getenv('RUN_LIVE_TESTS'):
         os.environ['OPENAI_API_KEY'] = 'test-openai-key'
-        os.environ['PINECONE_API_KEY'] = 'test-pinecone-key'
     os.environ['LOG_LEVEL'] = 'DEBUG'
     
     yield
@@ -40,5 +39,4 @@ def setup_test_environment():
     # Clean up environment variables after tests
     if not os.getenv('RUN_LIVE_TESTS'):
         os.environ.pop('OPENAI_API_KEY', None)
-        os.environ.pop('PINECONE_API_KEY', None)
     os.environ.pop('LOG_LEVEL', None) 

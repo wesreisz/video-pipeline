@@ -3,14 +3,26 @@
 # Exit on error
 set -e
 
-# Create Python virtual environment
-python3.13 -m venv create_layer
-source create_layer/bin/activate
+# Clean up any existing files
+rm -rf python
 
-# Install dependencies for manylinux2014 compatibility
-pip install -r requirements.txt \
-    --platform=manylinux2014_x86_64 \
+# Create the Python package directory
+mkdir -p python
+
+# Install dependencies from requirements.txt with specific platform and implementation
+python3.11 -m pip install \
+    --platform manylinux2014_x86_64 \
+    --implementation cp \
+    --python-version 3.11 \
     --only-binary=:all: \
-    --target ./create_layer/lib/python3.13/site-packages
+    --target ./python \
+    -r requirements.txt
 
-echo "Layer dependencies installed successfully" 
+# Remove unnecessary files to reduce layer size
+find ./python -type d -name "tests" -exec rm -rf {} +
+find ./python -type d -name "__pycache__" -exec rm -rf {} +
+find ./python -type f -name "*.pyc" -delete
+find ./python -type f -name "*.pyo" -delete
+
+echo "Layer dependencies installed successfully."
+echo "Layer size: $(du -sh python | cut -f1)" 

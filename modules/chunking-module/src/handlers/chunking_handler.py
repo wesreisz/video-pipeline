@@ -7,6 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 import random
 import string
+import hashlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.error_handler import handle_error
 
@@ -34,26 +35,28 @@ def get_sqs_queue_url() -> str:
         raise ValueError("SQS_QUEUE_URL environment variable is not set")
     return queue_url
 
-def extract_s3_details(event: Dict[str, Any]) -> Optional[Tuple[str, str]]:
+def extract_s3_details(event: Dict[str, Any]) -> Optional[Tuple[str, str, Dict[str, Any]]]:
     """
-    Extract S3 bucket and key from event records.
+    Extract S3 bucket, key and metadata from event records.
     
     Args:
         event: Event containing S3 details in EventBridge format
         
     Returns:
-        tuple: (bucket_name, object_key) if found, None otherwise
+        tuple: (bucket_name, object_key, metadata) if found, None otherwise
     """
     # Check for EventBridge format
     if 'detail' in event:
         records = event.get('detail', {}).get('records', [])
         if records:
-            s3_event = records[0].get('s3', {})
+            record = records[0]
+            s3_event = record.get('s3', {})
             bucket = s3_event.get('bucket', {}).get('name')
             key = s3_event.get('object', {}).get('key')
+            metadata = record.get('metadata', {})
             
             if bucket and key:
-                return (bucket, key)
+                return (bucket, key, metadata)
     
     return None
 
@@ -113,22 +116,42 @@ def get_s3_object(bucket: str, key: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         raise ValueError(f"File {key} is not valid JSON")
 
-def generate_chunk_id() -> str:
+def generate_chunk_hash(original_file: str, segment_id: int) -> str:
     """
-    Generate a unique 5-character chunk ID using letters and numbers.
+    Generate a deterministic hash from original file name and segment ID.
+    Returns only the first 10 characters of the hash for brevity.
     
+    Args:
+        original_file: Path to the original media file
+        segment_id: ID of the segment within the file
+        
     Returns:
-        str: A 5-character unique identifier
+        A 10-character hexadecimal hash string
+        
+    Raises:
+        ValueError: If inputs are invalid (None, empty string, or negative segment_id)
     """
-    chars = string.ascii_uppercase + string.digits
-    return ''.join(random.choices(chars, k=5))
+    # Validate inputs
+    if not original_file:
+        raise ValueError("original_file cannot be empty or None")
+    if segment_id is None or segment_id < 0:
+        raise ValueError("segment_id must be a non-negative integer")
+        
+    # Create a unique string combining the file path and segment ID
+    unique_string = f"{original_file}:{segment_id}"
+    
+    # Generate SHA-256 hash and return first 10 characters
+    hash_object = hashlib.sha256(unique_string.encode('utf-8'))
+    return hash_object.hexdigest()[:10]
 
-def send_to_sqs(audio_segments: List[AudioSegment], queue_url: Optional[str] = None) -> int:
+def send_to_sqs(audio_segments: List[AudioSegment], original_file: str, metadata: Dict[str, Any], queue_url: Optional[str] = None) -> int:
     """
     Send audio segments to SQS queue.
     
     Args:
         audio_segments: List of audio segments to send
+        original_file: Name of the original processed file
+        metadata: Metadata associated with the original file
         queue_url: Optional queue URL, if not provided will be fetched from environment
         
     Returns:
@@ -143,19 +166,25 @@ def send_to_sqs(audio_segments: List[AudioSegment], queue_url: Optional[str] = N
             # Get text content from either 'text' or 'transcript' field
             text_content = segment.get('text', segment.get('transcript', ''))
             
-            # Create message with unique chunk_id
+            # Generate unique chunk_id using hash
+            chunk_id = generate_chunk_hash(original_file, segment['id'])
+            
+            # Create message with unique chunk_id and metadata
             message = {
-                'chunk_id': generate_chunk_id(),
+                'chunk_id': chunk_id,
                 'text': text_content,
                 'start_time': segment['start_time'],
-                'end_time': segment['end_time']
+                'end_time': segment['end_time'],
+                'original_file': original_file,
+                'segment_id': segment['id'],  # Keep original segment ID for reference
+                'metadata': metadata  # Include the metadata
             }
             response = sqs_client.send_message(
                 QueueUrl=queue_url,
                 MessageBody=json.dumps(message)
             )
             sent_count += 1
-            logger.info(f"Sent segment to SQS: MessageId={response['MessageId']}, ChunkId={message['chunk_id']}")
+            logger.info(f"Sent segment to SQS: MessageId={response['MessageId']}, ChunkId={chunk_id}, Metadata={metadata}")
         except Exception as e:
             logger.error(f"Failed to send segment to SQS: {str(e)}")
             raise
@@ -191,20 +220,26 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 })
             }
         
-        source_bucket, source_key = s3_details
-        logger.info(f"Processing file {source_key} from bucket {source_bucket}")
+        source_bucket, source_key, metadata = s3_details
+        logger.info(f"Processing file {source_key} from bucket {source_bucket} with metadata: {metadata}")
         
         json_data = get_s3_object(source_bucket, source_key)
         audio_segments = process_audio_segments(json_data)
 
         # Send audio segments to SQS
-        sent_count = send_to_sqs(audio_segments)
+        original_file = json_data.get('original_file')
+        if not original_file:
+            logger.warning("No original_file found in JSON data")
+            original_file = source_key
+            
+        sent_count = send_to_sqs(audio_segments, original_file, metadata)
         
         response_data = {
             'message': 'Chunking completed successfully',
             'segments_sent': sent_count,
             'source_bucket': source_bucket,
             'source_file': source_key,
+            'metadata': metadata,
             'note': 'Audio segments have been sent to SQS queue'
         }
         

@@ -160,6 +160,8 @@ class SpecialList:
     def __init__(self, values: List[int]):
         self.values = values
 ```
+## ✅ 11. Installing Libraries
+Always use requirements.txt or dev-requirements.txt to install libraries
 
 
 > “Code is read more often than it is written — especially by your AI pair programmer.”

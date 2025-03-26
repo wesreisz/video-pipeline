@@ -6,7 +6,6 @@ This Lambda layer provides the required dependencies for the embedding module's 
 
 The layer includes:
 - OpenAI Python Client (>=1.0.0)
-- Pinecone Client (>=2.2.0)
 - Python JSON Logger (>=2.0.0)
 - Typing Extensions (>=4.5.0)
 
@@ -33,7 +32,6 @@ python/
     └── python3.13/
         └── site-packages/
             ├── openai/
-            ├── pinecone/
             └── ...
 ```
 

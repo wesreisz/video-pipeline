@@ -1,13 +1,13 @@
 # Lambda Embedding Module
 
-This module creates the infrastructure for the embedding Lambda function, which is responsible for generating and storing embeddings for text chunks using OpenAI and Pinecone.
+This module creates the infrastructure for the embedding Lambda function, which is responsible for generating embeddings for text chunks using OpenAI.
 
 ## Features
 
 - Lambda function for processing text chunks and generating embeddings
 - SQS trigger for processing messages in batches
 - IAM roles and policies for secure access
-- Integration with OpenAI and Pinecone services
+- Integration with OpenAI service
 
 ## Usage
 
@@ -17,7 +17,6 @@ module "lambda_embedding" {
 
   environment      = "dev"
   openai_api_key   = var.openai_api_key
-  pinecone_api_key = var.pinecone_api_key
   sqs_queue_url    = module.audio_segments_queue.queue_url
   sqs_queue_arn    = module.audio_segments_queue.queue_arn
   
@@ -41,7 +40,6 @@ module "lambda_embedding" {
 |------|-------------|------|---------|:--------:|
 | environment | Environment name (e.g., dev, prod) | `string` | n/a | yes |
 | openai_api_key | API key for OpenAI service | `string` | n/a | yes |
-| pinecone_api_key | API key for Pinecone service | `string` | n/a | yes |
 | log_level | Log level for Lambda function | `string` | `"INFO"` | no |
 | sqs_queue_url | URL of the SQS queue to process | `string` | n/a | yes |
 | sqs_queue_arn | ARN of the SQS queue to process | `string` | n/a | yes |

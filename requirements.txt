@@ -3,4 +3,4 @@ boto3>=1.26.0
 pinecone==6.0.2
 openai>=1.0.0
 python-json-logger>=2.0.0
-typing-extensions>=4.5.0  # For Python 3.9 compatibility with newer type hints 
+typing-extensions>=4.5.0 

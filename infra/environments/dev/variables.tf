@@ -17,15 +17,13 @@ variable "project_name" {
 }
 
 variable "openai_api_key" {
-  description = "API key for OpenAI service"
+  description = "OpenAI API Key"
   type        = string
   sensitive   = true
-  default     = "placeholder-openai-api-key"
 }
 
 variable "pinecone_api_key" {
-  description = "API key for Pinecone service"
+  description = "Pinecone API Key"
   type        = string
   sensitive   = true
-  default     = "placeholder-pinecone-api-key"
 } 
