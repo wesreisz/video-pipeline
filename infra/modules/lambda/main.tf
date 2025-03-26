@@ -107,9 +107,21 @@ resource "aws_lambda_function" "lambda" {
   timeout          = var.timeout
   memory_size      = var.memory_size
   
+  # Add layer configuration
+  layers = [aws_lambda_layer_version.dependencies.arn]
+  
   environment {
     variables = var.environment_variables
   }
   
   tags = var.tags
+}
+
+# Lambda Layer for dependencies
+resource "aws_lambda_layer_version" "dependencies" {
+  filename            = "${path.module}/../../../modules/embedding-module/layer/layer_content.zip"
+  layer_name          = "${var.function_name}_dependencies"
+  compatible_runtimes = ["python3.11"]
+  
+  description = "Dependencies for ${var.function_name} Lambda function"
 } 

@@ -46,20 +46,45 @@ python -m pytest tests/integration -vv
 
 To run tests that make actual API calls to OpenAI:
 
-1. Set up your environment using the provided script:
+1. **Prerequisites**:
+   - An OpenAI API key with embedding permissions
+   - You must be in the `embedding-module` directory
+
+2. **Set up the environment**:
    ```bash
-   # From the embedding-module directory
+   # Option 1: Using the setup script (recommended)
    source tests/scripts/setup_test_env.sh <your-openai-api-key>
+
+   # Option 2: Manual environment setup
+   export OPENAI_API_KEY="your-api-key"
+   export RUN_LIVE_TESTS=1
    ```
 
-2. Run the tests with live API enabled:
+3. **Run the live API test**:
    ```bash
-   # Set environment variable to enable live tests
-   export RUN_LIVE_TESTS=1
+   # Run only the live API embedding test
+   python -m pytest tests/integration/test_openai_service.py::test_live_api_embedding_creation -vv
 
-   # Run OpenAI service tests including live API tests
+   # Or run all integration tests (including live test)
    python -m pytest tests/integration/test_openai_service.py -vv
    ```
+
+4. **Expected Output**:
+   - The test should complete in a few seconds
+   - You should see "PASSED" for the live API test
+   - Example output:
+     ```
+     tests/integration/test_openai_service.py::test_live_api_embedding_creation PASSED
+     ```
+
+5. **Cleanup** (optional):
+   ```bash
+   # Remove environment variables when done
+   unset OPENAI_API_KEY
+   unset RUN_LIVE_TESTS
+   ```
+
+**Note**: The live API test will make actual API calls to OpenAI and may incur charges. Make sure you have appropriate permissions and understand the pricing implications.
 
 ### Running All Tests
 

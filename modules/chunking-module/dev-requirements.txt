@@ -5,6 +5,8 @@ pytest-mock==3.10.0
 pytest-timeout==2.1.0
 moto==4.2.13
 types-boto3==1.0.2
+mypy-boto3-s3==1.33.0
+mypy-boto3-sqs==1.33.0
 
 # Development dependencies
 black==23.3.0

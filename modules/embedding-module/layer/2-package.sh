@@ -4,8 +4,8 @@
 set -e
 
 # Create layer structure
-mkdir -p python/lib/python3.13/site-packages
-cp -r create_layer/lib/python3.13/site-packages/* python/lib/python3.13/site-packages/
+mkdir -p python/lib/python3.11/site-packages
+cp -r create_layer/lib/python3.11/site-packages/* python/lib/python3.11/site-packages/
 
 # Create deployment package
 zip -r layer_content.zip python/

@@ -8,7 +8,7 @@ module "lambda" {
   
   function_name = "${var.environment}_media_embedding"
   handler       = "handlers/embedding_handler.lambda_handler"
-  runtime       = "python3.9"
+  runtime       = "python3.11"
   timeout       = 300
   memory_size   = 512
   
