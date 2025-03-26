@@ -484,96 +484,86 @@ class EmbeddingResult:
 
 def check_embedding_processing(test_id: str, expected_transcript: str, timeout: int = 300) -> bool:
     """
-    Check CloudWatch logs for successful embedding processing.
+    Check if the embedding processing completed successfully.
     
     Args:
         test_id: Unique identifier for this test run
         expected_transcript: The expected transcript text
-        timeout: Maximum time to wait for processing in seconds
+        timeout: Maximum time to wait for results in seconds
         
     Returns:
-        bool: True if embedding processing was successful
+        bool: True if embedding processing was successful, False otherwise
     """
     print_header("\nSTEP 4: Testing embedding processing")
     
     logs_client = boto3.client('logs')
-    log_group_name = '/aws/lambda/dev_media_embedding'
-    
-    start_time = int((datetime.now() - timedelta(minutes=5)).timestamp() * 1000)
-    end_time = int(datetime.now().timestamp() * 1000)
-    
     max_attempts = 10
     wait_time = timeout // max_attempts
     
     for attempt in range(max_attempts):
-        print_info(f"Attempt {attempt + 1} of {max_attempts}: Checking embedding Lambda logs...")
-        
         try:
-            # Get all log streams from the last 5 minutes
-            streams = logs_client.describe_log_streams(
-                logGroupName=log_group_name,
+            # Get the most recent log stream
+            response = logs_client.describe_log_streams(
+                logGroupName='/aws/lambda/dev_media_embedding',
                 orderBy='LastEventTime',
                 descending=True,
-                limit=5
+                limit=1
             )
             
-            processed_chunks = []
+            if not response['logStreams']:
+                if attempt < max_attempts - 1:
+                    print_info(f"No log streams found yet. Waiting {wait_time} seconds before next attempt...")
+                    time.sleep(wait_time)
+                    continue
+                print_error("No log streams found after maximum attempts")
+                return False
             
-            # Check each stream for relevant log messages
-            for stream in streams.get('logStreams', []):
-                response = logs_client.get_log_events(
-                    logGroupName=log_group_name,
-                    logStreamName=stream['logStreamName'],
-                    startTime=start_time,
-                    endTime=end_time
-                )
+            # Get log events from the most recent stream
+            log_stream_name = response['logStreams'][0]['logStreamName']
+            log_events = logs_client.get_log_events(
+                logGroupName='/aws/lambda/dev_media_embedding',
+                logStreamName=log_stream_name,
+                startFromHead=True
+            )
+            
+            # Process log events
+            embedding_found = False
+            for event in log_events['events']:
+                message = event['message']
                 
-                for event in response.get('events', []):
-                    message = event.get('message', '')
-                    
-                    # Look for successful processing messages
-                    if "Processing chunk" in message:
-                        try:
-                            # Extract chunk details from the inline log format
-                            # Format: "Processing chunk CHUNK_ID: TEXT"
-                            parts = message.split("Processing chunk ")[-1].strip().split(": ", 1)
-                            if len(parts) == 2:
-                                chunk_id, text = parts
-                                processed_chunks.append(EmbeddingResult(
-                                    chunk_id=chunk_id,
-                                    text=text,
-                                    status='success',
-                                    text_length=len(text)
-                                ))
-                        except Exception:
-                            continue
-                    # Also check for chunking Lambda's format
-                    elif "Sent segment to SQS" in message:
-                        try:
-                            # Extract chunk ID from the chunking log format
-                            # Format: "Sent segment to SQS: MessageId=XXX, ChunkId=YYY"
-                            chunk_id = message.split("ChunkId=")[-1].strip()
-                            processed_chunks.append(EmbeddingResult(
-                                chunk_id=chunk_id,
-                                text="",  # We don't have the text in this format
-                                status='success',
-                                text_length=0
-                            ))
-                        except Exception:
-                            continue
+                # Check for successful embedding creation
+                if "Embedding response:" in message:
+                    print_success("Found embedding response in logs")
+                    # Extract embedding details
+                    if "embedding=" in message and "model=" in message:
+                        embedding_found = True
+                        print_info("Embedding details:")
+                        print_info("  - Status: Success")
+                        # Extract model information
+                        model_start = message.find("model='") + 7
+                        model_end = message.find("'", model_start)
+                        if model_start > 6 and model_end > model_start:
+                            model = message[model_start:model_end]
+                            print_info(f"  - Model: {model}")
+                        # Extract usage information if available
+                        if "usage=" in message:
+                            usage_start = message.find("usage=") + 6
+                            usage_end = message.find("}", usage_start) + 1
+                            if usage_start > 5 and usage_end > usage_start:
+                                usage = message[usage_start:usage_end]
+                                print_info(f"  - Usage: {usage}")
+                        return True
+                
+                # Check for errors
+                elif "error" in message.lower() and "OpenAI" in message:
+                    print_error(f"Found error in embedding process: {message}")
+                    return False
             
-            if processed_chunks:
-                print_success(f"Found {len(processed_chunks)} processed chunks")
-                for chunk in processed_chunks:
-                    print_info(f"  Chunk {chunk.chunk_id}:")
-                    print_info(f"    Text: \"{chunk.text}\"")
-                    print_info(f"    Length: {chunk.text_length} characters")
-                return True
-            
-            if attempt < max_attempts - 1:
+            if not embedding_found and attempt < max_attempts - 1:
                 print_info(f"No embedding results found yet. Waiting {wait_time} seconds before next attempt...")
                 time.sleep(wait_time)
-        
+                continue
+            
         except ClientError as e:
             print_error(f"Error checking CloudWatch logs: {e}")
             return False

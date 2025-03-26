@@ -51,7 +51,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 
                 # Create embedding using OpenAI service
                 embedding_response = openai_service.create_embedding(text_content)
-                
+                logger.info("Embedding response: %s", embedding_response)
+
                 # Add to processed records with embedding data
                 processed_records.append({
                     'chunk_id': chunk_id,
