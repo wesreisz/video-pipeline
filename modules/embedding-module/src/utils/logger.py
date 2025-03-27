@@ -2,7 +2,7 @@ import logging
 import os
 from typing import Optional
 
-def setup_logger(name: Optional[str] = None) -> logging.Logger:
+def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
     Set up a logger with consistent formatting and log level.
     

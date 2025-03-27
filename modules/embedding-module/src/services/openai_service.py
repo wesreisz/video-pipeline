@@ -4,9 +4,10 @@ import logging
 from dataclasses import dataclass
 
 from openai import OpenAI, APITimeoutError, APIError
-from utils.logger import setup_logger
+from utils.logger import get_logger
+from services.secrets_service import SecretsService
 
-logger = setup_logger(__name__)
+logger = get_logger(__name__)
 
 @dataclass
 class EmbeddingResponse:
@@ -24,22 +25,26 @@ class OpenAIService:
     
     DEFAULT_MODEL = "text-embedding-ada-002"  # Base model name without version
     
-    def __init__(self, client: Optional[OpenAI] = None):
+    def __init__(self, client: Optional[OpenAI] = None, secrets_service: Optional[SecretsService] = None):
         """
         Initialize OpenAI service.
         
         Args:
             client: Optional OpenAI client for testing purposes
+            secrets_service: Optional SecretsService for testing purposes
         """
         if client is not None:
             self.client = client
             logger.info("Using provided OpenAI client")
             return
             
+        # Initialize secrets service
+        self.secrets_service = secrets_service or SecretsService()
+            
         # Get required configuration
-        self.api_key = os.environ.get('OPENAI_API_KEY')
+        self.api_key = self.secrets_service.get_openai_api_key()
         if not self.api_key:
-            logger.error("OPENAI_API_KEY not found in environment variables")
+            logger.error("OpenAI API key not found in secrets")
             raise OpenAIServiceError("OpenAI API key not configured")
         
         # Get optional configuration
@@ -54,12 +59,14 @@ class OpenAIService:
                 "max_retries": max_retries
             }
             
-            # Add optional configuration if environment variables are set
-            if base_url := os.environ.get('OPENAI_BASE_URL'):
+            # Add optional configuration from secrets
+            base_url = self.secrets_service.get_openai_base_url()
+            if base_url:
                 client_kwargs['base_url'] = base_url
                 logger.info("Using custom base URL: %s", base_url)
             
-            if org_id := os.environ.get('OPENAI_ORG_ID'):
+            org_id = self.secrets_service.get_openai_org_id()
+            if org_id:
                 client_kwargs['organization'] = org_id
                 logger.info("Using organization ID: %s", org_id)
                 

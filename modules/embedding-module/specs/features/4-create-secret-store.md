@@ -149,3 +149,9 @@ use the reference to get the open api key from the secret store
 
 Explanatory comments and documentation for each code snippet.
 
+Follow all project standards:
+* .cursor/rules/project-architecture.mdc
+* .cursor/rules/project-structure.mdc
+* .cursor/rules/python.mdc
+* .cursor/rules/terraform.mdc
+
