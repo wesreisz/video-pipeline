@@ -205,10 +205,10 @@ check_aws_resources() {
     
     # Check Step Functions state machine
     echo -e "\n${YELLOW}Checking Step Functions state machine...${NO_COLOR}"
-    aws stepfunctions describe-state-machine --state-machine-arn "$(terraform output -raw sfn_state_machine_arn)" || {
+    if ! aws stepfunctions describe-state-machine --state-machine-arn "$(terraform output -raw sfn_state_machine_arn)" --query 'status' --output text | grep -q "ACTIVE"; then
         echo -e "\n${RED}Step Functions state machine 'dev_video_processing' is not accessible.${NO_COLOR}"
         exit 1
-    }
+    fi
     echo -e "${GREEN}Step Functions state machine is accessible.${NO_COLOR}"
 }
 
@@ -245,7 +245,7 @@ check_aws_resource_readiness() {
         local sfn_arn=$(terraform output -raw sfn_state_machine_arn)
         local sfn_ready=false
         
-        if aws stepfunctions describe-state-machine --state-machine-arn "$sfn_arn" --query 'status' | grep -q "ACTIVE"; then
+        if aws stepfunctions describe-state-machine --state-machine-arn "$sfn_arn" --query 'status' --output text 2>/dev/null | grep -q "ACTIVE"; then
             sfn_ready=true
         fi
         

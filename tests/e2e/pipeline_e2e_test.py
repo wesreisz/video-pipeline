@@ -483,92 +483,66 @@ class EmbeddingResult:
     text_length: int
 
 def check_embedding_processing(test_id: str, expected_transcript: str, timeout: int = 300) -> bool:
-    """
-    Check if the embedding processing completed successfully.
-    
-    Args:
-        test_id: Unique identifier for this test run
-        expected_transcript: The expected transcript text
-        timeout: Maximum time to wait for results in seconds
-        
-    Returns:
-        bool: True if embedding processing was successful, False otherwise
-    """
+    """Check if the embedding processing completed successfully by monitoring Step Functions execution."""
     print_header("\nSTEP 4: Testing embedding processing")
     
-    logs_client = boto3.client('logs')
     max_attempts = 10
     wait_time = timeout // max_attempts
     
+    sfn_client = boto3.client('stepfunctions')
+    
+    # Find the state machine ARN
+    response = sfn_client.list_state_machines()
+    state_machine_arn = None
+    
+    for machine in response.get('stateMachines', []):
+        if 'video_processing' in machine.get('name', '').lower():
+            state_machine_arn = machine.get('stateMachineArn')
+            break
+    
+    if not state_machine_arn:
+        print_error("Could not find the video processing state machine")
+        return False
+    
+    # Check executions until we find success or timeout
     for attempt in range(max_attempts):
-        try:
-            # Get the most recent log stream
-            response = logs_client.describe_log_streams(
-                logGroupName='/aws/lambda/dev_media_embedding',
-                orderBy='LastEventTime',
-                descending=True,
-                limit=1
+        response = sfn_client.list_executions(
+            stateMachineArn=state_machine_arn,
+            maxResults=10
+        )
+        
+        for execution in response.get('executions', []):
+            exec_details = sfn_client.describe_execution(
+                executionArn=execution.get('executionArn')
             )
             
-            if not response['logStreams']:
-                if attempt < max_attempts - 1:
-                    print_info(f"No log streams found yet. Waiting {wait_time} seconds before next attempt...")
-                    time.sleep(wait_time)
-                    continue
-                print_error("No log streams found after maximum attempts")
-                return False
-            
-            # Get log events from the most recent stream
-            log_stream_name = response['logStreams'][0]['logStreamName']
-            log_events = logs_client.get_log_events(
-                logGroupName='/aws/lambda/dev_media_embedding',
-                logStreamName=log_stream_name,
-                startFromHead=True
-            )
-            
-            # Process log events
-            embedding_found = False
-            for event in log_events['events']:
-                message = event['message']
-                
-                # Check for successful embedding creation
-                if "Embedding response:" in message:
-                    print_success("Found embedding response in logs")
-                    # Extract embedding details
-                    if "embedding=" in message and "model=" in message:
-                        embedding_found = True
-                        print_info("Embedding details:")
-                        print_info("  - Status: Success")
-                        # Extract model information
-                        model_start = message.find("model='") + 7
-                        model_end = message.find("'", model_start)
-                        if model_start > 6 and model_end > model_start:
-                            model = message[model_start:model_end]
-                            print_info(f"  - Model: {model}")
-                        # Extract usage information if available
-                        if "usage=" in message:
-                            usage_start = message.find("usage=") + 6
-                            usage_end = message.find("}", usage_start) + 1
-                            if usage_start > 5 and usage_end > usage_start:
-                                usage = message[usage_start:usage_end]
-                                print_info(f"  - Usage: {usage}")
+            try:
+                input_data = json.loads(exec_details.get('input', '{}'))
+                if test_id in str(input_data):
+                    status = exec_details.get('status')
+                    
+                    if status == 'SUCCEEDED':
+                        print_success(f"Step Functions execution completed successfully: {execution.get('executionArn')}")
                         return True
-                
-                # Check for errors
-                elif "error" in message.lower() and "OpenAI" in message:
-                    print_error(f"Found error in embedding process: {message}")
-                    return False
-            
-            if not embedding_found and attempt < max_attempts - 1:
-                print_info(f"No embedding results found yet. Waiting {wait_time} seconds before next attempt...")
-                time.sleep(wait_time)
+                    elif status == 'FAILED':
+                        print_error(f"Step Functions execution failed: {execution.get('executionArn')}")
+                        # Get the error details
+                        if exec_details.get('error'):
+                            print_error(f"Error: {exec_details.get('error')}")
+                            print_error(f"Cause: {exec_details.get('cause')}")
+                        return False
+                    elif status == 'RUNNING':
+                        print_info(f"Step Functions execution still running. Waiting {wait_time} seconds before next attempt...")
+                        time.sleep(wait_time)
+                        break
+            except json.JSONDecodeError:
                 continue
-            
-        except ClientError as e:
-            print_error(f"Error checking CloudWatch logs: {e}")
+        
+        if attempt == max_attempts - 1:
+            print_error("Embedding processing did not complete within the timeout period")
             return False
     
-    print_error("No embedding results found after maximum attempts")
+    print_error("Could not find matching Step Functions execution")
     return False
 
 
