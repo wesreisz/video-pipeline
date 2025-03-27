@@ -4,10 +4,10 @@ import os
 from typing import Dict, Any, List
 
 from services.openai_service import OpenAIService, OpenAIServiceError
-from utils.logger import setup_logger
+from utils.logger import get_logger
 
 # Initialize logger
-logger = setup_logger(__name__)
+logger = get_logger(__name__)
 
 # Initialize OpenAI service lazily
 _openai_service = None
