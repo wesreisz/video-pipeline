@@ -7,6 +7,7 @@ import boto3
 from botocore.exceptions import ClientError
 import random
 import string
+import hashlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils.error_handler import handle_error
 
@@ -113,22 +114,40 @@ def get_s3_object(bucket: str, key: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         raise ValueError(f"File {key} is not valid JSON")
 
-def generate_chunk_id() -> str:
+def generate_chunk_hash(original_file: str, segment_id: int) -> str:
     """
-    Generate a unique 5-character chunk ID using letters and numbers.
+    Generate a deterministic hash from original file name and segment ID.
     
+    Args:
+        original_file: Path to the original media file
+        segment_id: ID of the segment within the file
+        
     Returns:
-        str: A 5-character unique identifier
+        A hexadecimal hash string
+        
+    Raises:
+        ValueError: If inputs are invalid (None, empty string, or negative segment_id)
     """
-    chars = string.ascii_uppercase + string.digits
-    return ''.join(random.choices(chars, k=5))
+    # Validate inputs
+    if not original_file:
+        raise ValueError("original_file cannot be empty or None")
+    if segment_id is None or segment_id < 0:
+        raise ValueError("segment_id must be a non-negative integer")
+        
+    # Create a unique string combining the file path and segment ID
+    unique_string = f"{original_file}:{segment_id}"
+    
+    # Generate SHA-256 hash
+    hash_object = hashlib.sha256(unique_string.encode('utf-8'))
+    return hash_object.hexdigest()
 
-def send_to_sqs(audio_segments: List[AudioSegment], queue_url: Optional[str] = None) -> int:
+def send_to_sqs(audio_segments: List[AudioSegment], original_file: str, queue_url: Optional[str] = None) -> int:
     """
     Send audio segments to SQS queue.
     
     Args:
         audio_segments: List of audio segments to send
+        original_file: Name of the original processed file
         queue_url: Optional queue URL, if not provided will be fetched from environment
         
     Returns:
@@ -143,19 +162,24 @@ def send_to_sqs(audio_segments: List[AudioSegment], queue_url: Optional[str] = N
             # Get text content from either 'text' or 'transcript' field
             text_content = segment.get('text', segment.get('transcript', ''))
             
+            # Generate unique chunk_id using hash
+            chunk_id = generate_chunk_hash(original_file, segment['id'])
+            
             # Create message with unique chunk_id
             message = {
-                'chunk_id': generate_chunk_id(),
+                'chunk_id': chunk_id,
                 'text': text_content,
                 'start_time': segment['start_time'],
-                'end_time': segment['end_time']
+                'end_time': segment['end_time'],
+                'original_file': original_file,
+                'segment_id': segment['id']  # Keep original segment ID for reference
             }
             response = sqs_client.send_message(
                 QueueUrl=queue_url,
                 MessageBody=json.dumps(message)
             )
             sent_count += 1
-            logger.info(f"Sent segment to SQS: MessageId={response['MessageId']}, ChunkId={message['chunk_id']}")
+            logger.info(f"Sent segment to SQS: MessageId={response['MessageId']}, ChunkId={chunk_id}")
         except Exception as e:
             logger.error(f"Failed to send segment to SQS: {str(e)}")
             raise
@@ -198,7 +222,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         audio_segments = process_audio_segments(json_data)
 
         # Send audio segments to SQS
-        sent_count = send_to_sqs(audio_segments)
+        original_file = json_data.get('original_file')
+        if not original_file:
+            logger.warning("No original_file found in JSON data")
+            original_file = source_key
+            
+        sent_count = send_to_sqs(audio_segments, original_file)
         
         response_data = {
             'message': 'Chunking completed successfully',
