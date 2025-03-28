@@ -4,6 +4,8 @@ module "secrets" {
   environment     = "dev"
   openai_api_key  = var.openai_api_key
   pinecone_api_key = var.pinecone_api_key
+  log_level        = "INFO"
+  sqs_queue_url    = module.audio_segments_queue.queue_url
 }
 
 # Export the secrets access policy ARN for use in other modules

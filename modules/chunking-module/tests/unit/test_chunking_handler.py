@@ -7,7 +7,7 @@ from handlers.chunking_handler import (
     get_s3_object,
     send_to_sqs,
     lambda_handler,
-    generate_chunk_id
+    generate_chunk_hash
 )
 import string
 
@@ -131,17 +131,25 @@ def test_get_s3_object_invalid_json(mocker):
     with pytest.raises(ValueError, match="File test-key is not valid JSON"):
         get_s3_object("test-bucket", "test-key")
 
-def test_generate_chunk_id():
-    """Test generation of chunk IDs."""
-    # Test multiple generations to ensure format is correct
-    for _ in range(10):
-        chunk_id = generate_chunk_id()
-        assert len(chunk_id) == 5
-        assert all(c in string.ascii_uppercase + string.digits for c in chunk_id)
+def test_generate_chunk_hash():
+    """Test generation of chunk hashes."""
+    # Test that hashes are deterministic
+    original_file = "test_file.mp3"
+    segment_id = 1
     
-    # Test uniqueness
-    chunk_ids = [generate_chunk_id() for _ in range(100)]
-    assert len(set(chunk_ids)) > 95  # Allow for small chance of duplicates
+    hash1 = generate_chunk_hash(original_file, segment_id)
+    hash2 = generate_chunk_hash(original_file, segment_id)
+    assert hash1 == hash2
+    
+    # Test different inputs produce different hashes
+    hash3 = generate_chunk_hash(original_file, 2)
+    assert hash1 != hash3
+    
+    # Test input validation
+    with pytest.raises(ValueError):
+        generate_chunk_hash("", 1)
+    with pytest.raises(ValueError):
+        generate_chunk_hash(original_file, -1)
 
 def test_send_to_sqs_success(mocker, sample_transcription_result):
     """Test successful SQS message sending."""
@@ -159,7 +167,7 @@ def test_send_to_sqs_success(mocker, sample_transcription_result):
     mock_sqs.return_value.send_message.side_effect = mock_send_message
     
     segments = sample_transcription_result["audio_segments"]
-    result = send_to_sqs(segments, "test-queue-url")
+    result = send_to_sqs(segments, "test-file.mp3")
     
     # Verify the number of messages sent
     assert result == 2
@@ -167,10 +175,14 @@ def test_send_to_sqs_success(mocker, sample_transcription_result):
     # Verify message format
     for msg in sent_messages:
         assert 'chunk_id' in msg
-        assert len(msg['chunk_id']) == 5
+        # SHA-256 hashes are 64 characters long
+        assert len(msg['chunk_id']) == 64
+        assert all(c in '0123456789abcdef' for c in msg['chunk_id'])
         assert 'text' in msg
         assert 'start_time' in msg
         assert 'end_time' in msg
+        assert 'original_file' in msg
+        assert 'segment_id' in msg
 
 def test_send_to_sqs_failure(mocker, sample_transcription_result):
     """Test SQS message sending failure."""

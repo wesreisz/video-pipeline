@@ -48,8 +48,8 @@ class OpenAIService:
             raise OpenAIServiceError("OpenAI API key not configured")
         
         # Get optional configuration
-        timeout = float(os.environ.get('OPENAI_TIMEOUT', '20.0'))
-        max_retries = int(os.environ.get('OPENAI_MAX_RETRIES', '3'))
+        timeout = float(self.secrets_service.get_secret('openai_timeout') or '20.0')
+        max_retries = int(self.secrets_service.get_secret('openai_max_retries') or '3')
         
         try:
             # Configure the client with settings

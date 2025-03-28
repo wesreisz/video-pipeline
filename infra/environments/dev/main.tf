@@ -108,6 +108,7 @@ module "lambda_embedding" {
   pinecone_api_key = var.pinecone_api_key
   sqs_queue_url    = module.audio_segments_queue.queue_url
   sqs_queue_arn    = module.audio_segments_queue.queue_arn
+  secrets_access_policy_arn = module.secrets.secrets_access_policy_arn
   
   tags = {
     Environment = var.environment

@@ -15,6 +15,17 @@ variable "pinecone_api_key" {
   sensitive   = true
 }
 
+variable "log_level" {
+  description = "Log level for the application"
+  type        = string
+  default     = "INFO"
+}
+
+variable "sqs_queue_url" {
+  description = "URL of the SQS queue"
+  type        = string
+}
+
 # KMS key for encrypting the secrets
 resource "aws_kms_key" "secrets" {
   description             = "KMS key for embedding module secrets"
@@ -49,8 +60,12 @@ resource "aws_secretsmanager_secret_version" "embedding_module" {
   secret_string = jsonencode({
     openai_api_key    = var.openai_api_key
     pinecone_api_key  = var.pinecone_api_key
-    openai_org_id     = "org-IQCAET"
+    openai_org_id     = "org-b6y2SlhOMQnynny57KMpe8Bk"
     openai_base_url   = "https://api.openai.com/v1"
+    log_level         = var.log_level
+    sqs_queue_url     = var.sqs_queue_url
+    openai_timeout    = "20.0"
+    openai_max_retries = "3"
   })
 }
 

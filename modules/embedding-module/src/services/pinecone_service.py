@@ -2,18 +2,26 @@ import os
 from typing import List, Dict, Any
 import logging
 
-from ..utils.logger import setup_logger
+from utils.logger import get_logger
+from services.secrets_service import SecretsService
 
-logger = setup_logger(__name__)
+logger = get_logger(__name__)
 
 class PineconeService:
     """Service for interacting with Pinecone vector database."""
     
-    def __init__(self):
-        """Initialize Pinecone service with API key from environment."""
-        self.api_key = os.environ.get('PINECONE_API_KEY')
+    def __init__(self, secrets_service: SecretsService = None):
+        """
+        Initialize Pinecone service with API key from secrets.
+        
+        Args:
+            secrets_service: Optional SecretsService instance for testing
+        """
+        self.secrets_service = secrets_service or SecretsService()
+        self.api_key = self.secrets_service.get_pinecone_api_key()
         if not self.api_key:
-            logger.warning("PINECONE_API_KEY not found in environment variables")
+            logger.error("Pinecone API key not found in secrets")
+            raise ValueError("Pinecone API key not configured")
     
     def upsert_embeddings(
         self,

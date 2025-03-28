@@ -16,10 +16,8 @@ module "lambda" {
   output_path = "../../build/embedding_lambda.zip"
   
   environment_variables = {
-    OPENAI_API_KEY   = var.openai_api_key
-    PINECONE_API_KEY = var.pinecone_api_key
-    LOG_LEVEL        = var.log_level
-    SQS_QUEUE_URL    = var.sqs_queue_url
+    ENVIRONMENT = var.environment
+    USE_ENV_FALLBACK = "false"
   }
   
   tags = merge(var.tags, {
@@ -52,6 +50,12 @@ resource "aws_iam_policy" "sqs_policy" {
 resource "aws_iam_role_policy_attachment" "lambda_sqs" {
   role       = module.lambda.role_name
   policy_arn = aws_iam_policy.sqs_policy.arn
+}
+
+# Attach Secrets Manager access policy to Lambda role
+resource "aws_iam_role_policy_attachment" "lambda_secrets" {
+  role       = module.lambda.role_name
+  policy_arn = var.secrets_access_policy_arn
 }
 
 # Lambda SQS trigger

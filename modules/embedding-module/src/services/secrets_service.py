@@ -1,11 +1,18 @@
 import json
 import os
+import logging
 from typing import Dict, Optional
 import boto3
 from botocore.exceptions import ClientError
-from utils.logger import get_logger
 
-logger = get_logger(__name__)
+# Set up basic logger
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
 
 class SecretsService:
     """Service for managing secrets using AWS Secrets Manager with environment variable fallback"""

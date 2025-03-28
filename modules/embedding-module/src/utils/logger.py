@@ -1,6 +1,16 @@
 import logging
 import os
 from typing import Optional
+from services.secrets_service import SecretsService
+
+_secrets_service = None
+
+def get_secrets_service():
+    """Get or create a singleton SecretsService instance."""
+    global _secrets_service
+    if _secrets_service is None:
+        _secrets_service = SecretsService()
+    return _secrets_service
 
 def get_logger(name: Optional[str] = None) -> logging.Logger:
     """
@@ -29,8 +39,9 @@ def get_logger(name: Optional[str] = None) -> logging.Logger:
         # Add handler to logger
         logger.addHandler(handler)
     
-    # Set log level from environment variable or default to INFO
-    log_level = os.environ.get('LOG_LEVEL', 'INFO').upper()
+    # Set log level from secrets or default to INFO
+    secrets_service = get_secrets_service()
+    log_level = (secrets_service.get_secret('log_level') or 'INFO').upper()
     logger.setLevel(getattr(logging, log_level, logging.INFO))
     
     return logger 
