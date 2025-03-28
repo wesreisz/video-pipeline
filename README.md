@@ -10,25 +10,28 @@ flowchart TD
     end
     D -- Writes transcription back to --> B
 
-    B -- Notifies --> L2[Chucking]
-    subgraph L2["Chucking"]
+    B -- Notifies --> L2[Chunking]
+    subgraph L2["Chunking"]
          J["Text Extraction Module"]
          J -- Loads text chunks into --> G["SQS Queue"]
     end
 
     G -- Invokes in development --> EM[Embedding]
     subgraph EM["Embedding"]
-         H["Embedding Module"]
+         H["Text Embedding Module"]
          I["Pinecone Vector DB"]
          H -- Stores embeddings in --> I
     end
 
+    H -- Uses --> O["OpenAI Embedding Service"]
+
     LLM["LLM"] -- Accesses --> I
 
     A@{ shape: sm-circ}
-    style H fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
     style I fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
+    style LLM fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
     style A color:#000000
+
 ```
 
 # Video Pipeline
