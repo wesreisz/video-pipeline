@@ -1,0 +1,7 @@
+# Core dependencies for Lambda function
+openai>=1.0.0
+python-json-logger>=2.0.0
+typing-extensions>=4.5.0
+pinecone==6.0.2  # Pinecone client for vector operations
+urllib3<2.0.0  # Required for Pinecone client compatibility
+loguru>=0.7.0  # Required for logging 

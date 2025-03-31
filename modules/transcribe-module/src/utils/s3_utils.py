@@ -79,4 +79,23 @@ class S3Utils:
         Returns:
             str: ISO-formatted timestamp
         """
-        return datetime.datetime.now().isoformat() 
+        return datetime.datetime.now().isoformat()
+        
+    def get_object_metadata(self, bucket, key):
+        """
+        Get metadata from an S3 object
+        
+        Args:
+            bucket (str): S3 bucket name
+            key (str): S3 object key
+            
+        Returns:
+            dict: Object metadata or empty dict if metadata not found
+        """
+        try:
+            logger.info(f"Fetching metadata for s3://{bucket}/{key}")
+            response = self.s3_client.head_object(Bucket=bucket, Key=key)
+            return response.get('Metadata', {})
+        except Exception as e:
+            logger.warning(f"Failed to get metadata for {bucket}/{key}: {str(e)}")
+            return {} 

@@ -1,0 +1,3 @@
+We are currently reading and correctly processing messages of the SQS queue. We have added some additional data called metadata to the SQS queue. That metadata has the information needed for TalkMetadata. Do a minimum update to this code base to get the metadata from the queue and populate the TalkMetadata object.
+
+Be sure to handle all error conditions and setup some appropriate tests and logging.

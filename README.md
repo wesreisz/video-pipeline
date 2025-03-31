@@ -10,25 +10,21 @@ flowchart TD
     end
     D -- Writes transcription back to --> B
 
-    B -- Notifies --> L2[Chucking]
-    subgraph L2["Chucking"]
+    B -- Notifies --> L2[Chunking]
+    subgraph L2["Chunking"]
          J["Text Extraction Module"]
+         J -- Loads text chunks into --> G["SQS Queue"]
     end
-    J -- Loads text chunks into --> G["SQS Queue"]
 
-    G -- Invokes --> EM[Embedding]
+    G -- Invokes in development --> EM[Embedding]
     subgraph EM["Embedding"]
-         H["Embedding Module"]
-         I["Pinecone Vector DB"]
-         H -- Stores embeddings in --> I
+         H["Text Embedding Module"]
     end
 
-    LLM["LLM"] -- Accesses --> I
+    H -- Uses --> O["OpenAI Embedding Service"]
 
-    A@{ shape: sm-circ}
-    style H fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
-    style I fill:#f9f,stroke:#333,stroke-width:2px,stroke-dasharray: 5 5
     style A color:#000000
+
 ```
 
 # Video Pipeline
@@ -47,52 +43,53 @@ This project implements a modern serverless architecture for processing audio an
 
 ## Architecture
 
-The video processing pipeline leverages AWS services in a serverless architecture pattern:
+The video processing pipeline implements an event-driven serverless architecture on AWS:
 
 ### Core Components
 
 1. **Storage Layer**
-   - S3 buckets for input media files
-   - Separate buckets for transcription and chunking outputs
-   - Secure and scalable storage with versioning
+   - S3 buckets for input media files and processed outputs
+   - Versioning enabled for data integrity
+   - Encryption at rest for security compliance
 
 2. **Event Processing**
-   - CloudTrail for capturing S3 object creation events
-   - EventBridge for event routing and management
+   - EventBridge for standardized event routing (using EventBridge format)
    - Step Functions for workflow orchestration
+   - SQS queues for reliable message processing
 
 3. **Processing Modules**
    - Transcribe Module: Handles audio/video transcription
    - Chunking Module: Processes transcriptions into semantic chunks
+   - Embedding Module: Creates embeddings using OpenAI
    - Lambda functions for serverless execution
 
-### Workflow Diagram
+### Event Flow
 
-The above Mermaid diagram illustrates the complete workflow from file upload to final processing.
+1. File upload triggers an S3 event
+2. EventBridge routes the event to appropriate services
+3. Step Functions orchestrate the processing workflow
+4. Results are stored back in S3
 
 ## Project Structure
 
 ```
 video-pipeline/
-├── infra/                  # Infrastructure as Code
-│   ├── bootstrap/         # Initial setup resources
-│   ├── environments/      # Environment configurations
-│   ├── modules/          # Reusable Terraform modules
-│   └── build/            # Build artifacts
+├── infra/                 # Infrastructure as Code
+│   ├── environments/      # Environment-specific configs (dev, prod)
+│   │   ├── dev/
+│   │   └── prod/
+│   └── modules/           # Reusable Terraform modules
 │
 ├── modules/               # Service Implementations
-│   ├── transcribe-module/ # Audio/video transcription service
-│   └── chunking-module/   # Semantic chunking service
+│   ├── transcribe-module/ # Audio/video transcription
+│   ├── chunking-module/   # Semantic chunking
+│   └── embedding-module/  # Vector embeddings
 │
 ├── tests/                 # Test Suite
-│   ├── unit/             # Unit tests
-│   ├── integration/      # Integration tests
-│   └── e2e/              # End-to-end tests
-│
-├── samples/              # Sample media files
-├── events/              # Sample event payloads
-├── specs/               # API specifications
-└── .vscode/            # VS Code configurations
+│   ├── unit/              # Unit tests
+│   ├── integration/       # Integration tests
+│   └── e2e/               # End-to-end tests
+└── samples/               # Sample media files
 ```
 
 ## Prerequisites
@@ -100,9 +97,10 @@ video-pipeline/
 - AWS Account with appropriate permissions
 - AWS CLI configured with credentials
 - Python 3.9 or higher
-- Terraform 1.0 or higher
+- Terraform ≥ 5.91.0
 - Docker (for local testing)
 - Make (optional, for build scripts)
+
 
 ## Getting Started
 
@@ -121,34 +119,27 @@ video-pipeline/
 2. Configure AWS credentials:
    ```bash
    aws configure
-   # Follow prompts to input your AWS credentials
    ```
 
 ### Deployment
 
 1. Build the modules:
    ```bash
-   # Clean and create build directory
    rm -rf ./infra/build
    mkdir -p ./infra/build
-   
-   # Package Lambda functions
    zip -r ./infra/build/transcribe-module.zip ./modules/transcribe-module
    zip -r ./infra/build/chunking-module.zip ./modules/chunking-module
+   zip -r ./infra/build/embedding-module.zip ./modules/embedding-module
    ```
 
 2. Deploy infrastructure:
    ```bash
    cd infra/environments/dev
    terraform init
+   terraform fmt
+   terraform validate
    terraform plan -out=tfplan
    terraform apply tfplan
-   ```
-
-3. Verify deployment:
-   ```bash
-   terraform output
-   aws stepfunctions list-state-machines
    ```
 
 ## Testing
@@ -168,24 +159,31 @@ video-pipeline/
 3. End-to-End Tests:
    ```bash
    cd tests/e2e
-   ./run_e2e_test.sh --cleanup
+   ./run_e2e_test.sh
    ```
 
-### Test Options
+### E2E Test Options
 
-- `--cleanup`: Remove test artifacts after completion
-- `--file PATH`: Use custom sample file
-- `--timeout SECONDS`: Custom timeout (default: 300s)
-- `--input-bucket BUCKET`: Specify input bucket
-- `--output-bucket BUCKET`: Specify output bucket
+```bash
+./run_e2e_test.sh [OPTIONS]
+
+Options:
+  --input-bucket BUCKET   Specify input S3 bucket
+  --output-bucket BUCKET  Specify output S3 bucket
+  --file FILE            Path to sample audio/video file
+  --timeout SECONDS      Maximum wait time (default: 300s)
+  --cleanup             Remove test artifacts after completion
+  --venv PATH           Path to Python virtual environment
+```
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Follow coding standards and write tests
+4. Commit changes (`git commit -m 'Add amazing feature'`)
+5. Push to branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
 ## License
 

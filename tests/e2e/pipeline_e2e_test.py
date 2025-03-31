@@ -84,8 +84,23 @@ def upload_file(file_path, bucket, s3_client, test_id):
         # Always upload to the media directory with the test ID as a suffix
         unique_file_name = f"media/{base_name}_{test_id}{extension}"
         
-        print_info(f"Uploading {file_path} to s3://{bucket}/{unique_file_name}...")
-        s3_client.upload_file(file_path, bucket, unique_file_name)
+        # Add test metadata
+        metadata = {
+            'speaker': 'Test Speaker',
+            'title': 'Test Presentation',
+            'track': 'Test Track',
+            'day': 'Monday'
+        }
+        
+        print_info(f"Uploading {file_path} to s3://{bucket}/{unique_file_name} with metadata...")
+        s3_client.upload_file(
+            file_path, 
+            bucket, 
+            unique_file_name,
+            ExtraArgs={
+                'Metadata': metadata
+            }
+        )
         print_success(f"File uploaded successfully to s3://{bucket}/{unique_file_name}")
         return unique_file_name
     except ClientError as e:
@@ -164,12 +179,32 @@ def verify_transcription(bucket, key, s3_client):
         transcript_text = transcription['transcription_text']
         segments = transcription.get('segments', [])
         audio_segments = transcription.get('audio_segments', [])
+        metadata = transcription.get('metadata', {})
         
         # Output verification results
         print_success("Transcription verification passed!")
         print_info(f"Transcription text: \"{transcript_text}\"")
         print_info(f"Number of word-level segments: {len(segments)}")
         print_info(f"Number of sentence-level audio segments: {len(audio_segments)}")
+        
+        # Verify metadata
+        expected_metadata = {
+            'speaker': 'Test Speaker',
+            'title': 'Test Presentation',
+            'track': 'Test Track',
+            'day': 'Monday'
+        }
+        
+        if metadata:
+            print_info("\nVerifying metadata:")
+            for key, expected_value in expected_metadata.items():
+                actual_value = metadata.get(key)
+                if actual_value == expected_value:
+                    print_success(f"  {key}: {actual_value}")
+                else:
+                    print_error(f"  {key}: Expected '{expected_value}', got '{actual_value}'")
+        else:
+            print_error("No metadata found in transcription output")
         
         # Display sentence-level audio segments if available
         if audio_segments:
@@ -475,182 +510,121 @@ def cleanup_test_files(input_bucket, output_bucket, test_id, s3_client):
 
 
 @dataclass
-class SQSMessage:
-    """Data class representing an SQS message."""
-    message_id: str
-    body: Dict[str, Any]
-    receipt_handle: str
+class EmbeddingResult:
+    """Data class representing an embedding processing result."""
+    chunk_id: str
+    text: str
+    status: str
+    text_length: int
 
-def check_sqs_messages(test_id: str, expected_transcript: str, expected_start_time: str, expected_end_time: str, timeout: int = 30) -> bool:
-    """
-    Check for messages in the SQS queue related to our test.
+def check_embedding_processing(test_id: str, expected_transcript: str, timeout: int = 300) -> bool:
+    """Check if the embedding processing completed successfully by monitoring Step Functions execution."""
+    print_header("\nSTEP 4: Testing embedding processing")
     
-    Args:
-        test_id: Unique identifier for the test run
-        expected_transcript: The transcript text we expect to find
-        expected_start_time: Expected start time of the segment
-        expected_end_time: Expected end time of the segment
-        timeout: Maximum time to wait for messages in seconds
-        
-    Returns:
-        bool: True if relevant messages were found and matched expected content
-    """
-    print_header("Checking for SQS messages...")
+    max_attempts = 10
+    wait_time = timeout // max_attempts
     
-    try:
-        sqs_client = boto3.client('sqs')
-        queue_url = "https://sqs.us-east-1.amazonaws.com/855007292085/audio_segments_queue"
+    sfn_client = boto3.client('stepfunctions')
+    
+    # Find the state machine ARN
+    response = sfn_client.list_state_machines()
+    state_machine_arn = None
+    
+    for machine in response.get('stateMachines', []):
+        if 'video_processing' in machine.get('name', '').lower():
+            state_machine_arn = machine.get('stateMachineArn')
+            break
+    
+    if not state_machine_arn:
+        print_error("Could not find the video processing state machine")
+        return False
+    
+    # Check executions until we find success or timeout
+    for attempt in range(max_attempts):
+        response = sfn_client.list_executions(
+            stateMachineArn=state_machine_arn,
+            maxResults=10
+        )
         
-        max_attempts = 10
-        wait_time = timeout // max_attempts
-        attempt = 1
-        
-        while attempt <= max_attempts:
-            print_info(f"Attempt {attempt} of {max_attempts}: Checking SQS queue...")
+        for execution in response.get('executions', []):
+            exec_details = sfn_client.describe_execution(
+                executionArn=execution.get('executionArn')
+            )
             
             try:
-                response = sqs_client.receive_message(
-                    QueueUrl=queue_url,
-                    MaxNumberOfMessages=10,
-                    WaitTimeSeconds=min(wait_time, 20)  # AWS maximum is 20 seconds
-                )
-                
-                if 'Messages' in response:
-                    messages: List[SQSMessage] = []
-                    matching_messages: List[SQSMessage] = []
+                input_data = json.loads(exec_details.get('input', '{}'))
+                if test_id in str(input_data):
+                    status = exec_details.get('status')
                     
-                    for msg in response['Messages']:
-                        try:
-                            body = json.loads(msg['Body'])
-                            message = SQSMessage(
-                                message_id=msg['MessageId'],
-                                body=body,
-                                receipt_handle=msg['ReceiptHandle']
-                            )
-                            messages.append(message)
-                            
-                            # Check if this message matches our expected content
-                            if (body.get('transcript') == expected_transcript and
-                                str(body.get('start_time')) == expected_start_time and
-                                str(body.get('end_time')) == expected_end_time):
-                                matching_messages.append(message)
-                                
-                        except json.JSONDecodeError:
-                            print_error(f"Invalid JSON in message: {msg['Body']}")
-                            continue
-                    
-                    if messages:
-                        print_success(f"Found {len(messages)} messages in SQS queue")
-                        
-                        # Process and display each message
-                        for msg in messages:
-                            print_info(f"Message ID: {msg.message_id}")
-                            print_info(f"Message content: {json.dumps(msg.body, indent=2)}")
-                            
-                            # Delete the message since we've processed it
-                            sqs_client.delete_message(
-                                QueueUrl=queue_url,
-                                ReceiptHandle=msg.receipt_handle
-                            )
-                        
-                        if matching_messages:
-                            print_success(f"Found {len(matching_messages)} messages matching our test segment!")
-                            return True
-                        else:
-                            print_error("None of the messages match our expected test segment:")
-                            print_error(f"Expected transcript: {expected_transcript}")
-                            print_error(f"Expected start time: {expected_start_time}")
-                            print_error(f"Expected end time: {expected_end_time}")
-                            if attempt == max_attempts:
-                                return False
-            
-            except ClientError as e:
-                print_error(f"AWS SQS error on attempt {attempt}: {e}")
-                if attempt == max_attempts:
-                    raise
-            
-            if attempt < max_attempts:
-                print_info(f"No matching messages found yet. Waiting {wait_time} seconds before next attempt...")
-                time.sleep(wait_time)
-            attempt += 1
+                    if status == 'SUCCEEDED':
+                        print_success(f"Step Functions execution completed successfully: {execution.get('executionArn')}")
+                        return True
+                    elif status == 'FAILED':
+                        print_error(f"Step Functions execution failed: {execution.get('executionArn')}")
+                        # Get the error details
+                        if exec_details.get('error'):
+                            print_error(f"Error: {exec_details.get('error')}")
+                            print_error(f"Cause: {exec_details.get('cause')}")
+                        return False
+                    elif status == 'RUNNING':
+                        print_info(f"Step Functions execution still running. Waiting {wait_time} seconds before next attempt...")
+                        time.sleep(wait_time)
+                        break
+            except json.JSONDecodeError:
+                continue
         
-        print_error(f"No matching messages found in SQS queue after {max_attempts} attempts ({timeout} seconds)")
-        print_error("Please check the following:")
-        print_error("1. The chunking service is running and processing messages")
-        print_error("2. The SQS queue is properly configured")
-        print_error("3. IAM permissions are correct for accessing the queue")
-        print_error(f"4. The queue URL is correct: {queue_url}")
-        print_error("5. The chunking service is correctly processing the transcription")
-        return False
-        
-    except Exception as e:
-        print_error(f"Error checking SQS messages: {str(e)}")
-        raise
+        if attempt == max_attempts - 1:
+            print_error("Embedding processing did not complete within the timeout period")
+            return False
+    
+    print_error("Could not find matching Step Functions execution")
+    return False
 
 
 def main():
-    """Main function to run the end-to-end test."""
+    """Main test execution function."""
     args = parse_args()
-    
-    # Create an S3 client
-    s3_client = boto3.client('s3')
     
     # Generate a unique test ID
     test_id = str(uuid.uuid4())[:8]
     
-    print_header("=== Starting Video Pipeline E2E Test ===")
+    print_header("\n=== Starting Video Pipeline E2E Test ===\n")
     
-    # Step 1: Upload the sample file
-    print_header("STEP 1: Testing file upload")
-    input_key = upload_file(args.sample_file, args.input_bucket, s3_client, test_id)
-    print_divider()
+    # Initialize AWS clients
+    s3_client = boto3.client('s3')
     
-    # Step 2: Wait for and verify transcription
-    print_header("STEP 2: Testing transcription service")
-    transcription_key = wait_for_transcription(args.output_bucket, input_key, s3_client, args.timeout, test_id)
-    transcription = verify_transcription(args.output_bucket, transcription_key, s3_client)
-    print_divider()
-    
-    # Step 3: Verify chunking process
-    print_header("STEP 3: Testing chunking service")
-    verify_chunking(transcription, args.output_bucket, input_key, s3_client, args.timeout, test_id)
-    print_divider()
-    
-    # Step 4: Check for SQS messages
-    print_header("STEP 4: Testing SQS message delivery")
-    # Get the expected segment details from the transcription
-    audio_segments = transcription.get('audio_segments', [])
-    if not audio_segments:
-        print_error("No audio segments found in transcription")
-        sys.exit(1)
+    try:
+        # Step 1: Upload test file
+        print_header("\nSTEP 1: Testing file upload")
+        input_key = upload_file(args.sample_file, args.input_bucket, s3_client, test_id)
+        print_divider()
         
-    segment = audio_segments[0]  # We expect only one segment in our test file
-    if not check_sqs_messages(
-        test_id=test_id,
-        expected_transcript=segment.get('transcript'),
-        expected_start_time=str(segment.get('start_time')),
-        expected_end_time=str(segment.get('end_time')),
-        timeout=args.timeout
-    ):
-        print_error("Failed to find matching SQS messages")
+        # Step 2: Wait for and verify transcription
+        print_header("\nSTEP 2: Testing transcription service")
+        transcription_key = wait_for_transcription(args.output_bucket, input_key, s3_client, args.timeout, test_id)
+        transcription = verify_transcription(args.output_bucket, transcription_key, s3_client)
+        print_divider()
+        
+        # Step 3: Verify chunking process
+        print_header("\nSTEP 3: Testing chunking service")
+        verify_chunking(transcription, args.output_bucket, input_key, s3_client, args.timeout, test_id)
+        print_divider()
+        
+        # Step 4: Check embedding processing
+        if not check_embedding_processing(test_id, transcription['transcription_text'], args.timeout):
+            print_error("Failed to verify embedding processing")
+            sys.exit(1)
+        print_divider()
+        
+        # Clean up test files if requested
+        if args.cleanup:
+            cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
+        
+        print_success("\n=== Video Pipeline E2E Test Completed Successfully ===\n")
+        
+    except Exception as e:
+        print_error(f"\nTest failed: {str(e)}")
         sys.exit(1)
-    print_divider()
-    
-    # Print summary
-    print_header("=== E2E Test PASSED: Video pipeline is working correctly! ===")
-    print_info("\nSUMMARY:")
-    print_info(f"- Input file: {args.sample_file}")
-    print_info(f"- Transcription length: {len(transcription.get('transcription_text', ''))}")
-    print_info(f"- Word segments: {len(transcription.get('segments', []))}")
-    print_info(f"- Sentence-level segments: {len(transcription.get('audio_segments', []))}")
-    print_info(f"- Test ID: {test_id}")
-    print_divider()
-    
-    # Clean up test files if requested
-    if args.cleanup:
-        cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
-    
-    print_success("E2E Test completed successfully!")
 
 
 if __name__ == "__main__":

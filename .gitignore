@@ -4,6 +4,8 @@ __pycache__/
 
 # C extensions
 *.so
+modules/embedding-module/layer/python/
+modules/embedding-module/layer/layer_content.zip
 
 # Distribution / packaging
 bin/
