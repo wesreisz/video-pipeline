@@ -6,8 +6,10 @@ from handlers.chunking_handler import (
     process_audio_segments,
     get_s3_object,
     send_to_sqs,
-    lambda_handler
+    lambda_handler,
+    generate_chunk_hash
 )
+import string
 
 @pytest.fixture
 def sample_eventbridge_event():
@@ -48,9 +50,10 @@ def sample_transcription_result():
 
 def test_extract_s3_details_valid_event(sample_eventbridge_event):
     """Test extracting S3 details from a valid EventBridge event."""
-    bucket, key = extract_s3_details(sample_eventbridge_event)
+    bucket, key, metadata = extract_s3_details(sample_eventbridge_event)
     assert bucket == "test-bucket"
     assert key == "test/transcription-result.json"
+    assert isinstance(metadata, dict)
 
 def test_extract_s3_details_missing_detail():
     """Test extracting S3 details from event without detail."""
@@ -129,6 +132,26 @@ def test_get_s3_object_invalid_json(mocker):
     with pytest.raises(ValueError, match="File test-key is not valid JSON"):
         get_s3_object("test-bucket", "test-key")
 
+def test_generate_chunk_hash():
+    """Test generation of chunk hashes."""
+    # Test that hashes are deterministic
+    original_file = "test_file.mp3"
+    segment_id = 1
+    
+    hash1 = generate_chunk_hash(original_file, segment_id)
+    hash2 = generate_chunk_hash(original_file, segment_id)
+    assert hash1 == hash2
+    
+    # Test different inputs produce different hashes
+    hash3 = generate_chunk_hash(original_file, 2)
+    assert hash1 != hash3
+    
+    # Test input validation
+    with pytest.raises(ValueError):
+        generate_chunk_hash("", 1)
+    with pytest.raises(ValueError):
+        generate_chunk_hash(original_file, -1)
+
 def test_send_to_sqs_success(mocker, sample_transcription_result):
     """Test successful SQS message sending."""
     mock_sqs = mocker.patch("boto3.client")
@@ -136,9 +159,34 @@ def test_send_to_sqs_success(mocker, sample_transcription_result):
         'MessageId': 'test_message_id_1'
     }
     
+    # Capture the messages being sent
+    sent_messages = []
+    def mock_send_message(**kwargs):
+        sent_messages.append(json.loads(kwargs['MessageBody']))
+        return {'MessageId': 'test_message_id_1'}
+    
+    mock_sqs.return_value.send_message.side_effect = mock_send_message
+    
     segments = sample_transcription_result["audio_segments"]
-    result = send_to_sqs(segments, "test-queue-url")
+    test_metadata = {"title": "Test Video", "author": "Test Author"}
+    result = send_to_sqs(segments, "test-file.mp3", test_metadata)
+    
+    # Verify the number of messages sent
     assert result == 2
+    
+    # Verify message format
+    for msg in sent_messages:
+        assert 'chunk_id' in msg
+        # Hash should be exactly 10 characters
+        assert len(msg['chunk_id']) == 10
+        assert all(c in '0123456789abcdef' for c in msg['chunk_id'])
+        assert 'text' in msg
+        assert 'start_time' in msg
+        assert 'end_time' in msg
+        assert 'original_file' in msg
+        assert 'segment_id' in msg
+        assert 'metadata' in msg
+        assert msg['metadata'] == test_metadata
 
 def test_send_to_sqs_failure(mocker, sample_transcription_result):
     """Test SQS message sending failure."""
@@ -149,8 +197,9 @@ def test_send_to_sqs_failure(mocker, sample_transcription_result):
     )
     
     segments = sample_transcription_result["audio_segments"]
+    test_metadata = {"title": "Test Video"}
     with pytest.raises(ClientError):
-        send_to_sqs(segments, "invalid-queue-url")
+        send_to_sqs(segments, "test-file.mp3", test_metadata, "invalid-queue-url")
 
 def test_lambda_handler_success(mocker, sample_eventbridge_event, sample_transcription_result):
     """Test successful end-to-end lambda execution."""

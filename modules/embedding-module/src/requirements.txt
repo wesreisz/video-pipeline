@@ -1,0 +1,7 @@
+# Core AWS dependencies
+boto3>=1.26.0
+
+# Note: The following dependencies are provided by the Lambda layer:
+# openai>=1.0.0
+# python-json-logger>=2.0.0
+# typing-extensions>=4.5.0 

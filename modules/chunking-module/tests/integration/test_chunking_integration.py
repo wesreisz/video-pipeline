@@ -76,14 +76,16 @@ def test_end_to_end_processing(s3_client, sqs_client, test_bucket, test_queue, s
     # Set environment variables
     os.environ["SQS_QUEUE_URL"] = test_queue
 
-    # Create the event in EventBridge format
+    # Create the event in EventBridge format with metadata
+    test_metadata = {"title": "Test Video", "author": "Test Author"}
     event = {
         "detail": {
             "records": [{
                 "s3": {
                     "bucket": {"name": test_bucket},
                     "object": {"key": key}
-                }
+                },
+                "metadata": test_metadata
             }]
         }
     }
@@ -97,6 +99,17 @@ def test_end_to_end_processing(s3_client, sqs_client, test_bucket, test_queue, s
     assert "message" in response_body
     assert "Chunking completed successfully" in response_body["message"]
     assert response_body["segments_sent"] == 2
+
+    # Verify SQS messages include metadata
+    messages = sqs_client.receive_message(
+        QueueUrl=test_queue,
+        MaxNumberOfMessages=10
+    ).get('Messages', [])
+    
+    for message in messages:
+        message_body = json.loads(message['Body'])
+        assert 'metadata' in message_body
+        assert message_body['metadata'] == test_metadata
 
 def test_error_handling_missing_file(s3_client, sqs_client, test_bucket, test_queue):
     """Test error handling when S3 file is missing."""

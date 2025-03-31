@@ -99,6 +99,24 @@ module "chunking_lambda" {
   }
 }
 
+# Lambda function for embeddings
+module "lambda_embedding" {
+  source = "../../modules/lambda-embedding"
+  
+  environment      = var.environment
+  openai_api_key   = var.openai_api_key
+  pinecone_api_key = var.pinecone_api_key
+  sqs_queue_url    = module.audio_segments_queue.queue_url
+  sqs_queue_arn    = module.audio_segments_queue.queue_arn
+  secrets_access_policy_arn = module.secrets.secrets_access_policy_arn
+  max_concurrency  = 500  # Setting maximum concurrent Lambda executions to 500
+  
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
 # EventBridge Role for S3 events
 resource "aws_iam_role" "eventbridge_role" {
   name = "dev_eventbridge_s3_role"
@@ -180,7 +198,8 @@ resource "aws_iam_policy" "sfn_lambda_policy" {
         Action   = "lambda:InvokeFunction"
         Resource = [
           module.transcribe_lambda.function_arn,
-          module.chunking_lambda.function_arn
+          module.chunking_lambda.function_arn,
+          module.lambda_embedding.function_arn
         ]
       }
     ]
@@ -198,21 +217,21 @@ resource "aws_sfn_state_machine" "video_processing" {
   role_arn = aws_iam_role.step_functions_role.arn
 
   definition = jsonencode({
-    Comment = "Video processing pipeline with transcribe and chunking",
-    StartAt = "PrepareS3EventData",
+    Comment = "Video processing pipeline with transcribe, chunking, and embedding"
+    StartAt = "PrepareS3EventData"
     States = {
       PrepareS3EventData = {
-        Type = "Pass",
+        Type = "Pass"
         Parameters = {
-          "bucket.$": "$.detail.requestParameters.bucketName",
-          "key.$": "$.detail.requestParameters.key"
-        },
-        ResultPath = "$.s3event",
+          "bucket.$" = "$.detail.requestParameters.bucketName"
+          "key.$" = "$.detail.requestParameters.key"
+        }
+        ResultPath = "$.s3event"
         Next = "TranscribeMedia"
-      },
+      }
       TranscribeMedia = {
-        Type = "Task",
-        Resource = module.transcribe_lambda.function_arn,
+        Type = "Task"
+        Resource = module.transcribe_lambda.function_arn
         Parameters = {
           "detail": {
             "requestParameters": {
@@ -220,88 +239,128 @@ resource "aws_sfn_state_machine" "video_processing" {
               "key.$": "$.s3event.key"
             }
           }
-        },
-        ResultPath = "$.transcribeResult",
-        Next = "TranscribeSucceeded?",
+        }
+        ResultPath = "$.transcribeResult"
+        Next = "TranscribeSucceeded?"
         Retry = [
           {
-            ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
-            IntervalSeconds = 2,
-            MaxAttempts = 5,
+            ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"]
+            IntervalSeconds = 2
+            MaxAttempts = 5
             BackoffRate = 2.0
           }
-        ],
+        ]
         Catch = [
           {
-            ErrorEquals = ["States.ALL"],
-            ResultPath = "$.error",
+            ErrorEquals = ["States.ALL"]
+            ResultPath = "$.error"
             Next = "TranscribeFailed"
           }
         ]
-      },
-      "TranscribeSucceeded?": {
-        Type = "Choice",
+      }
+      "TranscribeSucceeded?" = {
+        Type = "Choice"
         Choices = [
           {
-            Variable = "$.transcribeResult.statusCode",
-            NumericEquals = 200,
+            Variable = "$.transcribeResult.statusCode"
+            NumericEquals = 200
             Next = "WaitForTranscriptionCompletion"
           }
-        ],
+        ]
         Default = "TranscribeFailed"
-      },
+      }
       WaitForTranscriptionCompletion = {
-        Type = "Wait",
-        Seconds = 60,
+        Type = "Wait"
+        Seconds = 60
         Next = "ChunkTranscription"
-      },
+      }
       ChunkTranscription = {
-        Type = "Task",
-        Resource = module.chunking_lambda.function_arn,
+        Type = "Task"
+        Resource = module.chunking_lambda.function_arn
         Parameters = {
           "detail.$": "$.transcribeResult.detail"
-        },
-        ResultPath = "$.chunkResult",
-        Next = "ChunkSucceeded?",
+        }
+        ResultPath = "$.chunkResult"
+        Next = "ChunkSucceeded?"
         Retry = [
           {
-            ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"],
-            IntervalSeconds = 2,
-            MaxAttempts = 3,
+            ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"]
+            IntervalSeconds = 2
+            MaxAttempts = 3
             BackoffRate = 2.0
           }
-        ],
+        ]
         Catch = [
           {
-            ErrorEquals = ["States.ALL"],
-            ResultPath = "$.error",
+            ErrorEquals = ["States.ALL"]
+            ResultPath = "$.error"
             Next = "ChunkingFailed"
           }
         ]
-      },
-      "ChunkSucceeded?": {
-        Type = "Choice",
+      }
+      "ChunkSucceeded?" = {
+        Type = "Choice"
         Choices = [
           {
-            Variable = "$.chunkResult.statusCode",
-            NumericEquals = 200,
+            Variable = "$.chunkResult.statusCode"
+            NumericEquals = 200
+            Next = "CreateEmbeddings"
+          }
+        ]
+        Default = "ChunkingFailed"
+      }
+      CreateEmbeddings = {
+        Type = "Task"
+        Resource = module.lambda_embedding.function_arn
+        Parameters = {
+          "detail.$": "$.chunkResult.body"
+        }
+        ResultPath = "$.embeddingResult"
+        Next = "EmbeddingSucceeded?"
+        Retry = [
+          {
+            ErrorEquals = ["Lambda.ServiceException", "Lambda.AWSLambdaException", "Lambda.SdkClientException"]
+            IntervalSeconds = 2
+            MaxAttempts = 3
+            BackoffRate = 2.0
+          }
+        ]
+        Catch = [
+          {
+            ErrorEquals = ["States.ALL"]
+            ResultPath = "$.error"
+            Next = "EmbeddingFailed"
+          }
+        ]
+      }
+      "EmbeddingSucceeded?" = {
+        Type = "Choice"
+        Choices = [
+          {
+            Variable = "$.embeddingResult.statusCode"
+            NumericEquals = 200
             Next = "ProcessingSucceeded"
           }
-        ],
-        Default = "ChunkingFailed"
-      },
+        ]
+        Default = "EmbeddingFailed"
+      }
       ProcessingSucceeded = {
         Type = "Succeed"
-      },
+      }
       TranscribeFailed = {
-        Type = "Fail",
-        Error = "TranscriptionError",
+        Type = "Fail"
+        Error = "TranscriptionError"
         Cause = "Transcription processing failed"
-      },
+      }
       ChunkingFailed = {
-        Type = "Fail",
-        Error = "ChunkingError",
+        Type = "Fail"
+        Error = "ChunkingError"
         Cause = "Chunking processing failed"
+      }
+      EmbeddingFailed = {
+        Type = "Fail"
+        Error = "EmbeddingError"
+        Cause = "Embedding processing failed"
       }
     }
   })
@@ -448,6 +507,11 @@ output "transcribe_lambda_function_name" {
 
 output "chunking_lambda_function_name" {
   value = module.chunking_lambda.function_name
+}
+
+output "embedding_lambda_function_name" {
+  description = "Name of the embedding Lambda function"
+  value       = module.lambda_embedding.function_name
 }
 
 output "sfn_state_machine_arn" {

@@ -4,7 +4,7 @@ resource "aws_sqs_queue" "audio_segments_queue" {
   max_message_size         = 262144  # 256 KB
   message_retention_seconds = 345600  # 4 days
   receive_wait_time_seconds = 0
-  visibility_timeout_seconds = 30
+  visibility_timeout_seconds = 300  # Match Lambda timeout
   
   tags = {
     Environment = var.environment

@@ -98,20 +98,37 @@ Once deployed, you can use the module by:
 
 1. Uploading a media file to the input S3 bucket:
    
-   For audio files:
-   ```
-   aws s3 cp samples/sample.mp3 s3://dev-media-transcribe-input/audio/
+   For audio files with metadata:
+   ```bash
+   aws s3 cp ./sample.mp3 s3://dev-media-transcribe-input/audio/sample.mp3 \
+     --metadata '{"speaker":"John Doe","title":"Sample Talk","track":"Technical Track","day":"Monday"}' \
+     --metadata-directive REPLACE
    ```
    
-   For video files:
-   ```
-   aws s3 cp samples/sample.mp4 s3://dev-media-transcribe-input/media/
+   For video files with metadata:
+   ```bash
+   aws s3 cp ./sample.mp4 s3://dev-media-transcribe-input/media/sample.mp4 \
+     --metadata '{"speaker":"Jane Smith","title":"Video Presentation","track":"Main Track","day":"Tuesday"}' \
+     --metadata-directive REPLACE
    ```
 
+   Supported metadata fields:
+   - `speaker`: Name of the speaker(s) in the recording
+   - `title`: Title of the talk or presentation
+   - `track`: Track or category of the talk
+   - `day`: Day of the week the talk was given
+
+   Note: All metadata fields are optional. The pipeline will continue processing even if metadata is not provided.
+
 2. The transcription will automatically be generated and stored in the output bucket:
-   ```
+   ```bash
    aws s3 ls s3://dev-media-transcribe-output/transcriptions/
    ```
+
+   The transcription process will:
+   - Log the metadata information during processing
+   - Include the metadata in the EventBridge response
+   - Continue processing even when metadata is not present
 
 ## Supported Media Formats
 
@@ -251,6 +268,12 @@ The transcription results are stored as JSON files in the output S3 bucket with 
   "timestamp": "2023-04-01T12:00:00",
   "job_name": "transcribe-abc123",
   "media_type": "audio",
+  "metadata": {
+    "speaker": "John Doe",
+    "title": "Sample Talk",
+    "track": "Technical Track",
+    "day": "Monday"
+  },
   "segments": [
     {
       "type": "pronunciation",
@@ -281,6 +304,11 @@ The transcription results are stored as JSON files in the output S3 bucket with 
 - `timestamp`: ISO-formatted timestamp of when the transcription was created
 - `job_name`: AWS Transcribe job name
 - `media_type`: Type of media ('audio' or 'video')
+- `metadata`: Object containing file metadata (if provided during upload):
+  - `speaker`: Name of the speaker(s)
+  - `title`: Title of the talk
+  - `track`: Track or category
+  - `day`: Day of the week
 - `segments`: List of time-stamped word-level segments from the transcription
 - `audio_segments`: List of sentence-level audio segments, each containing:
   - `id`: Sentence identifier

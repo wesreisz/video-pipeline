@@ -4,6 +4,7 @@ import os
 from services.transcription_service import TranscriptionService
 from utils.s3_utils import S3Utils
 from utils.error_handler import handle_error
+from utils.metadata_utils import sanitize_metadata
 
 # Configure logging
 logger = logging.getLogger()
@@ -68,6 +69,20 @@ def lambda_handler(event, context):
         s3_utils = S3Utils()
         transcription_service = TranscriptionService()
         
+        # Get metadata from S3 object and sanitize it
+        raw_metadata = s3_utils.get_object_metadata(bucket, key)
+        metadata = sanitize_metadata(raw_metadata)
+        
+        # Log both raw and sanitized metadata for debugging
+        logger.info(f"Raw metadata for {key}: {metadata}")
+        logger.info(
+            f"Sanitized metadata for {key}: "
+            f"Speaker: {metadata.get('speaker', 'Not specified')}, "
+            f"Title: {metadata.get('title', 'Not specified')}, "
+            f"Track: {metadata.get('track', 'Not specified')}, "
+            f"Day: {metadata.get('day', 'Not specified')}"
+        )
+        
         # Process the media file (audio or video)
         output_key = transcription_service.process_media(bucket, key)
         
@@ -80,14 +95,16 @@ def lambda_handler(event, context):
                     's3': {
                         'bucket': {'name': output_bucket},
                         'object': {'key': output_key}
-                    }
+                    },
+                    'metadata': metadata
                 }]
             },
             'body': json.dumps({
                 'message': 'Transcription completed successfully',
                 'bucket': bucket,
                 'original_file': key,
-                'transcription_file': output_key
+                'transcription_file': output_key,
+                'metadata': metadata
             })
         }
         
