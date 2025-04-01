@@ -40,6 +40,18 @@ module "transcription_bucket" {
   }
 }
 
+# Access List S3 Bucket
+module "access_list_bucket" {
+  source = "../../modules/s3"
+
+  bucket_name       = "dev-access-list"
+  enable_versioning = true
+  tags = {
+    Environment = "dev"
+    Purpose     = "access-control"
+  }
+}
+
 # Lambda function for transcription
 module "transcribe_lambda" {
   source = "../../modules/lambda"
@@ -110,6 +122,20 @@ module "lambda_embedding" {
   sqs_queue_arn    = module.audio_segments_queue.queue_arn
   secrets_access_policy_arn = module.secrets.secrets_access_policy_arn
   max_concurrency  = 500  # Setting maximum concurrent Lambda executions to 500
+  
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+# Lambda function for question handling
+module "question_module" {
+  source = "../../modules/question-module"
+  
+  environment = var.environment
+  log_level  = "INFO"
+  secrets_access_policy_arn = module.secrets.secrets_access_policy_arn
   
   tags = {
     Environment = var.environment
@@ -520,4 +546,14 @@ output "sfn_state_machine_arn" {
 
 output "eventbridge_rule_arn" {
   value = aws_cloudwatch_event_rule.s3_input_rule.arn
+}
+
+output "question_lambda_function_name" {
+  description = "Name of the question Lambda function"
+  value       = module.question_module.function_name
+}
+
+output "question_api_endpoint" {
+  description = "API Gateway endpoint URL for the question module"
+  value       = module.question_module.api_endpoint
 } 

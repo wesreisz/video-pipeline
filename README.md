@@ -1,6 +1,5 @@
 ```mermaid
 flowchart TD
-   flowchart TD
     Admin["Admin"] -- ① Uploads file --> B["Amazon S3"]
 
     B -- ② Triggers --> D["Transcription Module"]
@@ -25,19 +24,19 @@ flowchart TD
 
     H -- ⑦ Uses --> O["OpenAI Embedding Service"]
 
-    P -- ⑨ Responds to queries from --> Q["ChatGPT"]
+    P -- ⑫ Queries  <--> QH["Question Handler"]
 
-    subgraph QM["Question Module"]
-        Q
+    subgraph QM["Question"]
+        QH
     end
 
-    Q -- ⑩ Uses --> O
+    QH -- ⑪ Uses --> O
 
-    EndUser["User"] -- ⑪ Asks question --> Q
+    EndUser["User"] -- ⑨ Asks question --> QGPT["ChatGPT"]
+    QGPT -- ⑩ Post a question with api_key & email --> QH
 
     style Admin fill:#d1eaff,stroke:#007acc,stroke-width:2px,rx:10,ry:10
     style EndUser fill:#d1eaff,stroke:#007acc,stroke-width:2px,rx:10,ry:10
-
 
 ```
 

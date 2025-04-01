@@ -1,5 +1,5 @@
 # Core dependencies
-boto3>=1.26.0
+boto3>=1.26.137
 pinecone==6.0.2
 openai>=1.0.0
 python-json-logger>=2.0.0

@@ -5,7 +5,7 @@ variable "aws_region" {
 }
 
 variable "environment" {
-  description = "Environment name"
+  description = "Environment name (e.g., dev, prod)"
   type        = string
   default     = "dev"
 }
@@ -26,4 +26,11 @@ variable "pinecone_api_key" {
   description = "Pinecone API Key"
   type        = string
   sensitive   = true
+}
+
+variable "video_pipeline_api_key" {
+  description = "Video Pipeline API Key (optional - will be auto-generated if not provided)"
+  type        = string
+  sensitive   = true
+  default     = null
 } 

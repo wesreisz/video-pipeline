@@ -1,0 +1,8 @@
+# Core dependencies
+boto3>=1.26.137
+pinecone==6.0.2
+openai>=1.0.0
+python-json-logger>=2.0.0
+typing-extensions>=4.5.0  # For Python 3.9 compatibility with newer type hints
+loguru>=0.7.0
+requests>=2.31.0 

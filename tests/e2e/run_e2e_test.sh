@@ -116,8 +116,8 @@ fi
 # Check if boto3 is installed
 python -c "import boto3" 2>/dev/null
 if [[ $? -ne 0 ]]; then
-    echo -e "${YELLOW}Installing boto3...${NO_COLOR}"
-    pip install boto3
+    echo -e "${YELLOW}Installing test requirements...${NO_COLOR}"
+    pip install -r "$SCRIPT_DIR/requirements.txt"
 fi
 
 # Check AWS credentials
