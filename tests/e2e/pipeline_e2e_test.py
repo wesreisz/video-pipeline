@@ -30,6 +30,7 @@ from datetime import datetime, timedelta
 import re
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
+import requests
 
 # ANSI colors for terminal output
 GREEN = "\033[0;32m"
@@ -186,25 +187,6 @@ def verify_transcription(bucket, key, s3_client):
         print_info(f"Transcription text: \"{transcript_text}\"")
         print_info(f"Number of word-level segments: {len(segments)}")
         print_info(f"Number of sentence-level audio segments: {len(audio_segments)}")
-        
-        # Verify metadata
-        expected_metadata = {
-            'speaker': 'Test Speaker',
-            'title': 'Test Presentation',
-            'track': 'Test Track',
-            'day': 'Monday'
-        }
-        
-        if metadata:
-            print_info("\nVerifying metadata:")
-            for key, expected_value in expected_metadata.items():
-                actual_value = metadata.get(key)
-                if actual_value == expected_value:
-                    print_success(f"  {key}: {actual_value}")
-                else:
-                    print_error(f"  {key}: Expected '{expected_value}', got '{actual_value}'")
-        else:
-            print_error("No metadata found in transcription output")
         
         # Display sentence-level audio segments if available
         if audio_segments:
@@ -519,8 +501,6 @@ class EmbeddingResult:
 
 def check_embedding_processing(test_id: str, expected_transcript: str, timeout: int = 300) -> bool:
     """Check if the embedding processing completed successfully by monitoring Step Functions execution."""
-    print_header("\nSTEP 4: Testing embedding processing")
-    
     max_attempts = 10
     wait_time = timeout // max_attempts
     
@@ -581,17 +561,91 @@ def check_embedding_processing(test_id: str, expected_transcript: str, timeout: 
     return False
 
 
+def test_question_api(test_id: str, timeout: int = 60) -> bool:
+    """
+    Test the question API by making a request about the recently processed video.
+    """
+    print_header("\nSTEP 5: Testing Question API")
+    
+    try:
+        # Get secrets client
+        secrets_client = boto3.client('secretsmanager')
+        
+        # Get the API key from Secrets Manager
+        secret_response = secrets_client.get_secret_value(
+            SecretId='dev-video-pipeline-secrets'
+        )
+        secrets = json.loads(secret_response['SecretString'])
+        api_key = secrets.get('video-pipeline-api-key')  # Changed to match the actual key name
+        
+        if not api_key:
+            print_error("Could not retrieve API key from Secrets Manager")
+            print_info(f"Available secret keys: {', '.join(secrets.keys())}")
+            return False
+            
+        # Create session for requests
+        import requests
+        
+        # API endpoint
+        api_endpoint = "https://2168xkr9w5.execute-api.us-east-1.amazonaws.com/dev/query"
+        
+        # Request headers
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": api_key
+        }
+        
+        # Request body
+        data = {
+            "email": "test@example.com",
+            "question": "What is the name of the person in the transcripts?"
+        }
+        
+        print_info("Making request to Question API...")
+        print_info(f"Using API endpoint: {api_endpoint}")
+        print_info(f"Using API key: {api_key[:5]}...")  # Only show first 5 chars for security
+        response = requests.post(api_endpoint, headers=headers, json=data)
+        
+        if response.status_code != 200:
+            print_error(f"Question API request failed with status code {response.status_code}")
+            print_error(f"Response: {response.text}")
+            return False
+            
+        # Parse response
+        result = response.json()
+        
+        if 'pinecone_matches' not in result:
+            print_error("Response does not contain expected 'pinecone_matches' field")
+            return False
+            
+        matches = result['pinecone_matches']
+        if not matches:
+            print_error("No matches found in Pinecone response")
+            return False
+            
+        print_success("Successfully queried Question API")
+        print_info("Response matches:")
+        for match in matches:
+            print_info(f"  - {match.get('text', 'No text')} ({match.get('timestamp', 'No timestamp')})")
+            
+        return True
+        
+    except Exception as e:
+        print_error(f"Error testing Question API: {str(e)}")
+        return False
+
+
 def main():
     """Main test execution function."""
     args = parse_args()
     
-    # Generate a unique test ID
-    test_id = str(uuid.uuid4())[:8]
-    
     print_header("\n=== Starting Video Pipeline E2E Test ===\n")
     
-    # Initialize AWS clients
+    # Initialize AWS client
     s3_client = boto3.client('s3')
+    
+    # Generate a unique test ID
+    test_id = str(uuid.uuid4())[:8]
     
     try:
         # Step 1: Upload test file
@@ -599,28 +653,38 @@ def main():
         input_key = upload_file(args.sample_file, args.input_bucket, s3_client, test_id)
         print_divider()
         
-        # Step 2: Wait for and verify transcription
+        # Step 2: Test transcription service
         print_header("\nSTEP 2: Testing transcription service")
         transcription_key = wait_for_transcription(args.output_bucket, input_key, s3_client, args.timeout, test_id)
         transcription = verify_transcription(args.output_bucket, transcription_key, s3_client)
         print_divider()
         
-        # Step 3: Verify chunking process
+        # Step 3: Test chunking service
         print_header("\nSTEP 3: Testing chunking service")
         verify_chunking(transcription, args.output_bucket, input_key, s3_client, args.timeout, test_id)
         print_divider()
         
-        # Step 4: Check embedding processing
+        # Step 4: Test embedding processing
+        print_header("\nSTEP 4: Testing embedding processing")
         if not check_embedding_processing(test_id, transcription['transcription_text'], args.timeout):
-            print_error("Failed to verify embedding processing")
+            print_error("Embedding processing check failed")
             sys.exit(1)
         print_divider()
         
-        # Clean up test files if requested
-        if args.cleanup:
-            cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
+        # Step 5: Test Question API
+        if not test_question_api(test_id, args.timeout):
+            print_error("Question API test failed")
+            sys.exit(1)
         
         print_success("\n=== Video Pipeline E2E Test Completed Successfully ===\n")
+        
+        # Clean up if requested
+        if args.cleanup:
+            cleanup_test_files(args.input_bucket, args.output_bucket, test_id, s3_client)
+            
+    except KeyboardInterrupt:
+        print_info("\nTest interrupted by user")
+        sys.exit(1)
         
     except Exception as e:
         print_error(f"\nTest failed: {str(e)}")

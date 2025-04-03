@@ -1,0 +1,1 @@
+Create an s3util class that gets the imported s3 secret for the access list. Then create another utility class called AuthUtil that checks to see if the email sent on the post exists in the access list. If it does not exist, return a 403 not authorized error. Use a singleton pattern to create the AuthUtil class. Do not fetch the file everytime. cache it on the first call.

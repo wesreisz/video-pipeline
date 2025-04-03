@@ -1,0 +1,35 @@
+# Testing Framework and Extensions
+pytest>=7.0.0  # Core testing framework
+pytest-cov>=4.0.0  # Coverage reporting
+pytest-mock>=3.10.0  # Mocking support
+pytest-env>=1.1.0  # Environment variable management for tests
+pytest-xdist>=3.3.0  # Parallel test execution
+pytest-timeout>=2.1.0  # Test timeout management
+pytest-dotenv>=0.5.2  # .env file support
+pytest-asyncio>=0.23.0  # Async test support
+
+# Code Quality and Linting
+black>=22.0.0  # Code formatting
+flake8>=6.0.0  # Code linting
+mypy>=1.0.0  # Type checking
+isort>=5.12.0  # Import sorting
+
+# Type Stubs for Static Type Checking
+types-boto3  # Type stubs for boto3
+types-setuptools  # Type stubs for setuptools
+types-requests  # Type stubs for requests
+
+# Development Tools
+pip-tools>=7.0.0  # Dependency management
+pre-commit>=3.0.0  # Git hooks management
+
+# Test Mocking and Fixtures
+faker>=19.0.0  # Generate fake data for tests
+responses>=0.23.0  # Mock HTTP responses
+moto>=4.0.0  # Mock AWS services
+freezegun>=1.2.0  # Time freezing for tests
+pytest-recording>=0.13.0  # Record/replay HTTP interactions
+
+# Documentation
+sphinx>=7.0.0  # Documentation generator
+sphinx-rtd-theme>=1.0.0  # Documentation theme 

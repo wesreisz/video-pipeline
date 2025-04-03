@@ -1,29 +1,42 @@
 ```mermaid
 flowchart TD
-    A["User"] -- Uploads file --> B["Amazon S3"]
+    Admin["Admin"] -- ① Uploads file --> B["Amazon S3"]
 
-    B -- Triggers --> L1[Transcription]
+    B -- ② Triggers --> D["Transcription Module"]
     subgraph L1["Transcription"]
-         D["Transcription Module"]
+         D
          E["AWS Transcribe Service"]
-         D -- Uses --> E
+         D -- ③ Uses --> E
     end
-    D -- Writes transcription back to --> B
+    D -- ④ Writes transcription back to --> B
 
-    B -- Notifies --> L2[Chunking]
+    B -- ⑤ Notifies --> J["Chunking Module"]
     subgraph L2["Chunking"]
-         J["Text Extraction Module"]
+         J
          J -- Loads text chunks into --> G["SQS Queue"]
     end
 
-    G -- Invokes in development --> EM[Embedding]
+    G -- ⑥ Invokes in development --> EM[Embedding]
     subgraph EM["Embedding"]
          H["Text Embedding Module"]
+         H -- ⑧ Stores vectors in --> P["Pinecone Vector DB"]
     end
 
-    H -- Uses --> O["OpenAI Embedding Service"]
+    H -- ⑦ Uses --> O["OpenAI Embedding Service"]
 
-    style A color:#000000
+    P -- ⑫ Queries  <--> QH["Question Handler"]
+
+    subgraph QM["Question"]
+        QH
+    end
+
+    QH -- ⑪ Uses --> O
+
+    EndUser["User"] -- ⑨ Asks question --> QGPT["ChatGPT"]
+    QGPT -- ⑩ Post a question with api_key & email --> QH
+
+    style Admin fill:#d1eaff,stroke:#007acc,stroke-width:2px,rx:10,ry:10
+    style EndUser fill:#d1eaff,stroke:#007acc,stroke-width:2px,rx:10,ry:10
 
 ```
 

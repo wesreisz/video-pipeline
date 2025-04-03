@@ -59,6 +59,25 @@ resource "aws_iam_policy" "s3_access" {
   })
 }
 
+# Secrets Manager access policy
+resource "aws_iam_policy" "secrets_access" {
+  name        = "${var.function_name}_secrets_access"
+  description = "Secrets Manager access for ${var.function_name} Lambda"
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Effect   = "Allow"
+        Resource = ["arn:aws:secretsmanager:*:*:secret:dev-video-pipeline-secrets-*"]
+      }
+    ]
+  })
+}
+
 # AWS Transcribe access policy
 resource "aws_iam_policy" "transcribe_access" {
   count = var.enable_transcribe ? 1 : 0
@@ -94,6 +113,11 @@ resource "aws_iam_role_policy_attachment" "s3_access" {
   
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.s3_access[0].arn
+}
+
+resource "aws_iam_role_policy_attachment" "secrets_access" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = aws_iam_policy.secrets_access.arn
 }
 
 # Lambda function

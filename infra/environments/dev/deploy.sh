@@ -21,9 +21,11 @@ MODULES_DIR="$PROJECT_ROOT/modules"
 TRANSCRIBE_MODULE_DIR="$MODULES_DIR/transcribe-module"
 CHUNKING_MODULE_DIR="$MODULES_DIR/chunking-module"
 EMBEDDING_MODULE_DIR="$MODULES_DIR/embedding-module"
+QUESTION_MODULE_DIR="$MODULES_DIR/question-module"
 TRANSCRIBE_VENV_DIR="$TRANSCRIBE_MODULE_DIR/.venv"
 CHUNKING_VENV_DIR="$CHUNKING_MODULE_DIR/.venv"
 EMBEDDING_VENV_DIR="$EMBEDDING_MODULE_DIR/.venv"
+QUESTION_VENV_DIR="$QUESTION_MODULE_DIR/.venv"
 
 # Display header
 echo -e "${BOLD}===== Video Pipeline Dev Deployment Script =====${NO_COLOR}"
@@ -86,6 +88,30 @@ activate_embedding_venv() {
     pip install -q -r "$EMBEDDING_MODULE_DIR/dev-requirements.txt"
 }
 
+# Function to activate virtual environment for question module
+activate_question_venv() {
+    if [ ! -d "$QUESTION_VENV_DIR" ]; then
+        echo -e "\n${YELLOW}Creating virtual environment for question module...${NO_COLOR}"
+        cd "$QUESTION_MODULE_DIR"
+        python -m venv .venv
+    fi
+    
+    echo -e "\n${YELLOW}Activating virtual environment for question module...${NO_COLOR}"
+    source "$QUESTION_VENV_DIR/bin/activate"
+    
+    echo -e "\n${YELLOW}Updating pip to latest version...${NO_COLOR}"
+    python -m pip install --upgrade pip > /dev/null 2>&1
+    
+    echo -e "\n${YELLOW}Installing dependencies for question module...${NO_COLOR}"
+    pip install -q -r "$QUESTION_MODULE_DIR/requirements.txt"
+    pip install -q -r "$QUESTION_MODULE_DIR/dev-requirements.txt"
+    pip install -q -r "$QUESTION_MODULE_DIR/requirements-test.txt"
+    
+    # Verify installations
+    echo -e "\n${YELLOW}Verifying question module dependencies...${NO_COLOR}"
+    pip freeze | grep -E "pytest|openai|pinecone"
+}
+
 # Function to run tests for transcribe module
 run_transcribe_tests() {
     echo -e "\n${BOLD}===== Running transcribe module tests =====${NO_COLOR}"
@@ -141,13 +167,52 @@ run_embedding_tests() {
     echo -e "\n${GREEN}All embedding module tests passed!${NO_COLOR}"
 }
 
+# Function to run tests for question module
+run_question_tests() {
+    echo -e "\n${BOLD}===== Running question module tests =====${NO_COLOR}"
+    cd "$QUESTION_MODULE_DIR"
+    
+    # Ensure we're in the virtual environment
+    if [ -z "$VIRTUAL_ENV" ] || [[ "$VIRTUAL_ENV" != *"question-module/.venv"* ]]; then
+        echo -e "\n${YELLOW}Activating question module virtual environment...${NO_COLOR}"
+        source "$QUESTION_VENV_DIR/bin/activate"
+    fi
+    
+    # Run unit tests with pytest and coverage
+    echo -e "\n${YELLOW}Running unit tests for question module...${NO_COLOR}"
+    python -m pytest tests/unit/ -v || {
+        echo -e "\n${RED}Question module unit tests failed. Aborting deployment.${NO_COLOR}"
+        exit 1
+    }
+
+    # Run integration tests
+    echo -e "\n${YELLOW}Running integration tests for question module...${NO_COLOR}"
+    python -m pytest tests/integration -v || {
+        echo -e "\n${RED}Question module integration tests failed. Aborting deployment.${NO_COLOR}"
+        exit 1
+    }
+    
+    echo -e "\n${GREEN}All question module tests passed!${NO_COLOR}"
+}
+
 # Function to build the Lambda packages
 build_lambda_packages() {
     echo -e "\n${BOLD}===== Building Lambda packages =====${NO_COLOR}"
     
-    # Create Lambda layer first
-    echo -e "\n${YELLOW}Creating Lambda layer...${NO_COLOR}"
-    cd /Users/wesleyreisz/work/qcon/video-pipeline/modules/embedding-module/layer
+    # Create Lambda layers first
+    echo -e "\n${YELLOW}Creating embedding module Lambda layer...${NO_COLOR}"
+    cd "$EMBEDDING_MODULE_DIR/layer"
+    
+    # Clean up any existing files
+    echo -e "\n${YELLOW}Cleaning up existing layer files...${NO_COLOR}"
+    rm -rf python/ create_layer/ layer_content.zip
+    
+    # Make scripts executable and rebuild layer
+    chmod +x 1-install.sh 2-package.sh
+    ./1-install.sh && ./2-package.sh
+
+    echo -e "\n${YELLOW}Creating question module Lambda layer...${NO_COLOR}"
+    cd "$QUESTION_MODULE_DIR/layer"
     
     # Clean up any existing files
     echo -e "\n${YELLOW}Cleaning up existing layer files...${NO_COLOR}"
@@ -180,6 +245,13 @@ build_lambda_packages() {
     zip -r "$BUILD_DIR/embedding_lambda.zip" "modules/embedding-module/src/"
     
     echo -e "\n${GREEN}Embedding Lambda package built successfully: ${BUILD_DIR}/embedding_lambda.zip${NO_COLOR}"
+
+    # Create a zip package for the question Lambda function
+    echo -e "\n${YELLOW}Creating question module zip package...${NO_COLOR}"
+    cd "$PROJECT_ROOT"
+    zip -r "$BUILD_DIR/question_lambda.zip" "modules/question-module/src/"
+    
+    echo -e "\n${GREEN}Question Lambda package built successfully: ${BUILD_DIR}/question_lambda.zip${NO_COLOR}"
 }
 
 # Function to deploy using Terraform
@@ -292,6 +364,38 @@ run_e2e_test() {
     }
 }
 
+# Function to deploy access list
+deploy_access_list() {
+    echo -e "\n${BOLD}===== Deploying Access List =====${NO_COLOR}"
+    
+    # Get the access-list bucket name from Terraform output
+    local access_list_bucket=$(terraform output -raw access_list_bucket_name)
+    
+    echo -e "\n${YELLOW}Checking if access.csv exists in bucket...${NO_COLOR}"
+    
+    # Check if access.csv exists in the bucket
+    if ! aws s3api head-object --bucket "$access_list_bucket" --key "access.csv" 2>/dev/null; then
+        echo -e "\n${YELLOW}access.csv not found in bucket. Uploading...${NO_COLOR}"
+        
+        # First check project root for access.csv
+        if [ -f "$PROJECT_ROOT/access.csv" ]; then
+            # Upload access.csv from project root to S3
+            aws s3 cp "$PROJECT_ROOT/access.csv" "s3://$access_list_bucket/access.csv"
+            echo -e "${GREEN}Successfully uploaded access.csv from project root to bucket${NO_COLOR}"
+        # Then check question module's default access list
+        elif [ -f "$PROJECT_ROOT/modules/question-module/access-list/access.csv" ]; then
+            # Upload default access.csv from question module to S3
+            aws s3 cp "$PROJECT_ROOT/modules/question-module/access-list/access.csv" "s3://$access_list_bucket/access.csv"
+            echo -e "${GREEN}Successfully uploaded default access.csv from question module to bucket${NO_COLOR}"
+        else
+            echo -e "${RED}Warning: No access.csv found in project root or question module${NO_COLOR}"
+            echo -e "${YELLOW}Please ensure access.csv is present before using the system${NO_COLOR}"
+        fi
+    else
+        echo -e "${GREEN}access.csv already exists in bucket${NO_COLOR}"
+    fi
+}
+
 # Main deployment flow
 main() {
     # Step 1: Set up environments & run tests
@@ -303,6 +407,9 @@ main() {
 
     activate_embedding_venv
     run_embedding_tests
+
+    activate_question_venv
+    run_question_tests
     
     # Step 2: Build Lambda packages
     build_lambda_packages
@@ -318,8 +425,11 @@ main() {
         echo -e "\n${RED}AWS resources did not become ready in time. Aborting end-to-end tests.${NO_COLOR}"
         exit 1
     }
+
+    # Step 6: Deploy access list
+    deploy_access_list
     
-     echo -e "\n${GREEN}${BOLD}===== Running a complete end-to-end test =====${NO_COLOR}"
+    echo -e "\n${GREEN}${BOLD}===== Running a complete end-to-end test =====${NO_COLOR}"
 
     # Step 7: Run consolidated end-to-end test to validate deployment
     run_e2e_test

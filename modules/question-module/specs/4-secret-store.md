@@ -1,0 +1,1 @@
+Review teh terraform configuration, there are two secret managers access-list-location and dev-embedding-module-secrets. Can we combine these safely into a single secrets manager that all modules of the application use?

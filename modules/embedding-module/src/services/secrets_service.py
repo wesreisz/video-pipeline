@@ -20,7 +20,7 @@ class SecretsService:
     def __init__(self):
         self._secrets_cache: Dict[str, Dict] = {}
         self._client = boto3.client('secretsmanager')
-        self._secret_name = f"{os.environ.get('ENVIRONMENT', 'dev')}-embedding-module-secrets"
+        self._secret_name = f"{os.environ.get('ENVIRONMENT', 'dev')}-video-pipeline-secrets"
         self._use_env_fallback = os.environ.get('USE_ENV_FALLBACK', 'true').lower() == 'true'
     
     def get_secret(self, key: str) -> Optional[str]:
