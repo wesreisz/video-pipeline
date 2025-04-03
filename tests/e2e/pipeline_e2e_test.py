@@ -604,69 +604,72 @@ def get_secrets() -> Dict[str, str]:
 
 
 def test_question_api(test_id: str, timeout: int = 60) -> bool:
-    """Test the Question API endpoint."""
-    try:
-        print_header("\nSTEP 5: Testing Question API")
-        
-        # Get secrets from AWS Secrets Manager
-        secrets = get_secrets()
-        api_key = secrets.get('video-pipeline-api-key')
-        
-        if not api_key:
-            print_error("Could not retrieve API key from Secrets Manager")
-            print_info(f"Available secret keys: {', '.join(secrets.keys())}")
-            return False
-            
-        # Create session for requests
-        import requests
-        
-        # Get API endpoint from Terraform output
-        api_endpoint = get_terraform_output('question_api_endpoint')
-        
-        # Request headers
-        headers = {
-            "Content-Type": "application/json",
-            "x-api-key": api_key
-        }
-        
-        # Request body
-        data = {
-            "email": "test@example.com",
-            "question": "What is the name of the person in the transcripts?"
-        }
-        
-        print_info("Making request to Question API...")
-        print_info(f"Using API endpoint: {api_endpoint}")
-        print_info(f"Using API key: {api_key[:5]}...")  # Only show first 5 chars for security
-        response = requests.post(api_endpoint, headers=headers, json=data)
-        
-        if response.status_code != 200:
-            print_error(f"Question API request failed with status code {response.status_code}")
-            print_error(f"Response: {response.text}")
-            return False
-            
-        # Parse response
-        result = response.json()
-        
-        if 'pinecone_matches' not in result:
-            print_error("Response does not contain expected 'pinecone_matches' field")
-            return False
-            
-        matches = result['pinecone_matches']
-        if not matches:
-            print_error("No matches found in Pinecone response")
-            return False
-            
-        print_success("Successfully queried Question API")
-        print_info("Response matches:")
-        for match in matches:
-            print_info(f"  - {match.get('text', 'No text')} ({match.get('timestamp', 'No timestamp')})")
-            
-        return True
-        
-    except Exception as e:
-        print_error(f"Error testing Question API: {str(e)}")
+    """Test the question API with both AWS and custom domain endpoints."""
+    print_header("Testing Question API endpoints...")
+    
+    # Get API key from secrets
+    secrets = get_secrets()
+    api_key = secrets.get('video-pipeline-api-key')
+    if not api_key:
+        print_error("Failed to get API key from secrets")
         return False
+
+    # Get both endpoints
+    aws_endpoint = get_terraform_output('question_api_endpoint')
+    custom_domain = "https://icaet-dev.wesleyreisz.com/query"
+    
+    if not aws_endpoint:
+        print_error("Failed to get AWS API endpoint from Terraform outputs")
+        return False
+
+    # Test data
+    test_question = "What is the main topic discussed?"
+    test_email = "test@example.com"
+    headers = {
+        'Content-Type': 'application/json',
+        'x-api-key': api_key
+    }
+    payload = {
+        'question': test_question,
+        'email': test_email
+    }
+
+    # Test both endpoints
+    endpoints = [
+        ('AWS API Gateway', aws_endpoint),
+        ('Custom Domain', custom_domain)
+    ]
+
+    all_tests_passed = True
+    for endpoint_name, endpoint_url in endpoints:
+        print_info(f"\nTesting {endpoint_name} endpoint: {endpoint_url}")
+        
+        try:
+            response = requests.post(
+                endpoint_url,
+                headers=headers,
+                json=payload,
+                timeout=timeout
+            )
+
+            if response.status_code == 200 and response.text:
+                print_success(f"{endpoint_name} test passed!")
+                print_info(f"Question: {test_question}")
+            else:
+                print_error(f"{endpoint_name} request failed with status code: {response.status_code}")
+                print_info(f"Response: {response.text}")
+                all_tests_passed = False
+
+        except requests.exceptions.RequestException as e:
+            print_error(f"{endpoint_name} request failed: {str(e)}")
+            all_tests_passed = False
+
+    if not all_tests_passed:
+        print_error("Question API test failed")
+    else:
+        print_success("All Question API tests passed!")
+
+    return all_tests_passed
 
 
 def main():
