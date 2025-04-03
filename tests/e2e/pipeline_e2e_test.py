@@ -31,6 +31,7 @@ import re
 from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
 import requests
+import subprocess
 
 # ANSI colors for terminal output
 GREEN = "\033[0;32m"
@@ -561,12 +562,33 @@ def check_embedding_processing(test_id: str, expected_transcript: str, timeout: 
     return False
 
 
-def test_question_api(test_id: str, timeout: int = 60) -> bool:
-    """
-    Test the question API by making a request about the recently processed video.
-    """
-    print_header("\nSTEP 5: Testing Question API")
-    
+def get_terraform_output(output_name):
+    """Get a Terraform output value using the AWS CLI."""
+    try:
+        # Change to the Terraform directory
+        original_dir = os.getcwd()
+        terraform_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
+                                   'infra', 'environments', 'dev')
+        os.chdir(terraform_dir)
+        
+        # Run terraform output command
+        result = subprocess.run(['terraform', 'output', '-raw', output_name], 
+                              capture_output=True, text=True, check=True)
+        
+        # Change back to original directory
+        os.chdir(original_dir)
+        
+        return result.stdout.strip()
+    except subprocess.CalledProcessError as e:
+        print_error(f"Failed to get Terraform output '{output_name}': {e}")
+        raise
+    except Exception as e:
+        print_error(f"Error getting Terraform output: {e}")
+        raise
+
+
+def get_secrets() -> Dict[str, str]:
+    """Get secrets from AWS Secrets Manager."""
     try:
         # Get secrets client
         secrets_client = boto3.client('secretsmanager')
@@ -575,8 +597,20 @@ def test_question_api(test_id: str, timeout: int = 60) -> bool:
         secret_response = secrets_client.get_secret_value(
             SecretId='dev-video-pipeline-secrets'
         )
-        secrets = json.loads(secret_response['SecretString'])
-        api_key = secrets.get('video-pipeline-api-key')  # Changed to match the actual key name
+        return json.loads(secret_response['SecretString'])
+    except Exception as e:
+        print_error(f"Failed to get secrets: {e}")
+        return {}
+
+
+def test_question_api(test_id: str, timeout: int = 60) -> bool:
+    """Test the Question API endpoint."""
+    try:
+        print_header("\nSTEP 5: Testing Question API")
+        
+        # Get secrets from AWS Secrets Manager
+        secrets = get_secrets()
+        api_key = secrets.get('video-pipeline-api-key')
         
         if not api_key:
             print_error("Could not retrieve API key from Secrets Manager")
@@ -586,8 +620,8 @@ def test_question_api(test_id: str, timeout: int = 60) -> bool:
         # Create session for requests
         import requests
         
-        # API endpoint
-        api_endpoint = "https://2168xkr9w5.execute-api.us-east-1.amazonaws.com/dev/query"
+        # Get API endpoint from Terraform output
+        api_endpoint = get_terraform_output('question_api_endpoint')
         
         # Request headers
         headers = {
