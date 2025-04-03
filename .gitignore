@@ -1,3 +1,7 @@
+#exclude layers from git
+modules/question-module/layer/python
+modules/question-module/layer/layer_content.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
