@@ -1,0 +1,1092 @@
+{
+  "event_data": [
+    {
+      "title": "Deploy MultiModal RAG Systems with vLLM",
+      "type": "presentation",
+      "speakers": [
+        "Stephen Batifol - Zilliz / Milvus"
+      ],
+      "track": "AI and ML for Software Engineers: Foundational Insights",
+      "abstract": "<p>While text-based RAG systems have been everywhere in the last year and a half, there is so much more than text data. Images, audio, and documents often need to be processed together to provide meaningful insights, yet most RAG implementations focus solely on text. Think automated visual inspection systems understanding both manufacturing logs and production line images, or robotics systems correlating sensor data with visual feedback. These multimodal scenarios demand RAG systems that go beyond text-only processing.</p><p>In this talk, we'll talk about how one can build a MultiModal RAG system that helps solve this problem. We'll explore the architecture that makes it possible to run such a system and demonstrate how to build one using Milvus, LlamaIndex, and vLLM for deploying open-source LLMs on your own infrastructure.</p><p>Through a live demo, we'll showcase a real-world application processing both images and text queries. Whether you're looking to reduce API costs, maintain data privacy, or simply gain more control over your AI infrastructure, this session will provide you with actionable insights to implement MultiModal RAG in your organization.</p>",
+      "start": 1744104900,
+      "end": 1744107900
+    },
+    {
+      "title": "How to Unlock Insights and Enable Discovery Within Petabytes of Autonomous Driving Data",
+      "type": "presentation",
+      "speakers": [
+        "Kyra Mozley - Wayve"
+      ],
+      "track": "AI and ML for Software Engineers: Foundational Insights",
+      "abstract": "<p>For autonomous vehicle companies, finding valuable insights within millions of hours of video data is essential yet challenging. This talk explores how we at Wayve are leveraging foundation models and embeddings to build scalable search tools that make data discovery faster and labeling more efficient.</p><p>Attendees will learn how we leverage vision-language models (VLMs) to retrieve relevant scenarios at scale, which is invaluable for pinpointing scenes needed to meet safety standards or evaluate specific driving behaviors. By using embeddings, we can train classifiers to detect specific driving competencies. Through an active learning loop, we refine these classifiers, enabling them to label similar scenarios across the entire dataset with high efficiency. This embedding-based approach is both fast and scalable, and it also helps us spot “bad data” clusters, like images with droplets on the lens or scenes from test tracks.</p><p>The presentation will delve into the technical infrastructure behind these tools, from vector databases that enable rapid similarity search to Flyte workflows that orchestrate scalable processing across distributed systems. We’ll also explore how query generation helps bridge the gap in positional awareness within text embeddings, allowing for more precise search across video datasets. Finally, the talk will close with a look toward future possibilities, such as on-device edge filtering, which would use embeddings to reduce storage costs by capturing only the most interesting scenarios in real time.</p><p>Designed for engineers and data scientists, this session provides a deep dive into the power of embeddings and VLMs for labeling and retrieving data at scale, making it possible to unlock insights and drive advancements in autonomous vehicle technology.</p>",
+      "start": 1744128300,
+      "end": 1744131300
+    },
+    {
+      "title": "AI for Food Image Generation in Production: How & Why",
+      "type": "presentation",
+      "speakers": [
+        "Iaroslav  Amerkhanov - Delivery Hero"
+      ],
+      "track": "AI and ML for Software Engineers: Foundational Insights",
+      "abstract": "<p>In this talk, we will conduct a technical overview of a client-facing Food Image Generation solution developed at Delivery Hero. We will explore step-by-step the stages of the product development cycle starting from an initial business hypothesis, following up with the fast-to-market product validation MVP and the full-scale productization phase that enabled generating 100,000 images per day.</p><p>The first focus of our discussion will be on the modern approaches in Image Generation that enable the generation of high-quality food-related visual content. We will explore the challenges of experimenting with the image generation models, the evaluation techniques and the ways to fine-tune these models. We'll also cover a set of advanced Computer Vision methods that help maintain high standards of visual content quality by automatic validation of the images across dimensions like positioning, colour balance, appropriateness and content relevance.</p><p>We will also consider the practical aspects of serving and scaling the visual models in production depending on the maturity level of the product and the infrastructure. Following up with the technical stack, we will outline the most appropriate approaches for each of the stages focusing on cost-efficiency, as well as the architectural decisions made at Delivery Hero to host and scale a zoo of visual models.</p>",
+      "start": 1744115700,
+      "end": 1744118700
+    },
+    {
+      "title": "Reliable Data Flows and Scalable Platforms: Tackling Key Data Challenges",
+      "type": "presentation",
+      "speakers": [
+        "Matthias Niehoff - Codecentric AG"
+      ],
+      "track": "Modern Data Architectures",
+      "abstract": "<p>There are a few common and mostly well-known challenges when architecting for data. For example, many data teams struggle to move data in a stable and reliable way from operational systems to analytics systems. At the same time, they must manage complex and often costly infrastructure landscapes. These issues hinder companies from effectively leveraging their data for business purposes.</p><p>Drawing from real-world experience, this presentation will explore how we address these challenges by building reliable and scalable data platforms with reasonable costs. It will also cover solutions to help operational teams provide their data and to observe the flow towards analytics systems. In addition to discussing architectures and design considerations the presentation will also highlight tools and techniques used to implement these platforms.</p>",
+      "start": 1744191300,
+      "end": 1744194300
+    },
+    {
+      "title": "Building a Global Scale Data Platform with Cloud-Native Tools",
+      "type": "presentation",
+      "speakers": [
+        "George Peter Hantzaras - MongoDB"
+      ],
+      "track": "Modern Data Architectures",
+      "abstract": "<p>As businesses increasingly operate in hybrid and multi-cloud environments, managing data across these complex setups presents unique challenges and opportunities. This presentation provides a comprehensive guide to building a global-scale data platform using cloud-native tools. We will explore considerations, best practices, and pitfalls for deploying and managing scalable, cost-efficient, and high-performing data architectures that leverage various data storage solutions—including files, object stores, databases, and more—in cloud-native environments. Key topics include best practices for cloud storage, compute decoupling, ensuring high availability and data redundancy, and balancing the power of cloud providers while controlling costs.</p><p>Attendees will gain insights into automating data operations, leveraging cloud-native solutions, and avoiding common pitfalls in building scalable data infrastructures.</p>",
+      "start": 1744202100,
+      "end": 1744205100
+    },
+    {
+      "title": "Holistic Engineering: Organic Problem Solving for Complex Evolving Systems",
+      "type": "presentation",
+      "speakers": [
+        "Vanessa Formicola - Flo Health"
+      ],
+      "track": "The Changing Face of Architectural Practice",
+      "abstract": "<p>Every day developers have to work with code influenced by past decisions made by non-technical departments. Every day there are defects and other obstacles caused by non-technical factors that are nonetheless reflected in your code. Isn’t it time we make the implicit explicit, and embrace the organic, evolving nature of our software?</p><p>In this talk I will share many experiences I have had with such problems. I will draw out the common factors that underpinned these difficulties, describing not only how they presented in code, but also the causes that led to them. I will introduce Holistic Engineering, the practice of designing tech thinking of all the intrinsic parts of the organic system, embracing how people, management, organizational structure, budgets, company goals, production vision, security and even the political climate impact directly your code. This talk will help you better understand the boundaries of the organic system you are making technical decisions for and apply strategies to incorporate technical and non-technical factors to your decision process for your ever evolving organic system.</p>",
+      "start": 1744191300,
+      "end": 1744194300
+    },
+    {
+      "title": "Developing Meta's Orion AR Glasses",
+      "type": "presentation",
+      "speakers": [
+        "Jinsong Yu - Meta"
+      ],
+      "track": "Architectures You've Always Wondered About",
+      "abstract": "<p>Meta announced the Orion AR Glasses in September 2024. It is a time machine to demonstrate that it's possible to build an immersive augmented reality experience in a glasses form-factor. There were numerous technical challenges to make this a reality. This talk will focus on the technical innovations that went into Orion, and lessons learned for building such an ambitious product.</p>",
+      "start": 1744022700,
+      "end": 1744025700
+    },
+    {
+      "title": "Timeouts, Retries and Idempotency In Distributed Systems",
+      "type": "presentation",
+      "speakers": [
+        "Sam Newman"
+      ],
+      "track": "Connecting Systems: APIs, Protocols, Observability",
+      "abstract": "<p>The definition of insanity is doing the same thing over and over again” - this quote attributed to Einstein warns us of the danger of magical thinking, hoping that trying something just one more time will achieve success when before we failed. But is this really insanity?</p><p>In this talk, I’ll argue that retrying things actually does make a lot of sense, and is in fact key to improving the resilience of a distributed system. Along the way, I’ll explain the importance of timeouts, retry limits and knowing when giving up does make sense. I’ll also show how retries can be made safe (and help avoid draining your bank account), and perhaps we’ll get to examine that Einstein quote in a bit more detail.</p>",
+      "start": 1744191300,
+      "end": 1744194300
+    },
+    {
+      "title": "Foundation Models for Ranking: Challenges, Successes, and Lessons Learned",
+      "type": "presentation",
+      "speakers": [
+        "Moumita Bhattacharya - Netflix"
+      ],
+      "track": "AI and ML for Software Engineers: Foundational Insights",
+      "abstract": "<p>Recommender systems are an integral part of most products nowadays and are often a key driver of discovery for users of the product. Developing a large-scale recommender system that can provide personalized recommendations to several hundred million users while ensuring relevance and timeliness is as much of a machine-learning problem as it is an engineering task. Additionally, with the recent advancement in the AI space, we are able to train larger and larger models that can capture users' long-term preferences, which ultimately improves the personalization of such recommender systems. However, building and integrating such large foundation models into the recommender systems is yet another machine learning and engineering task that requires a lot of optimization of the algorithms, as well as the training and inference process.</p><p>In this talk, I will cover building such Recommender Systems and Foundation Models that can power products for multi-million users as well as highlight challenges faced, things to be considered, and success stories in real-world applications. This talk will bring the engineering and infrastructure perspective on these tasks, while also highlighting the AI and machine learning perspective.</p>",
+      "start": 1744119900,
+      "end": 1744122900
+    },
+    {
+      "title": "From Autocomplete to Agents: AI Coding State of Play",
+      "type": "presentation",
+      "speakers": [
+        "Birgitta Böckeler - Thoughtworks"
+      ],
+      "track": "Engineering Productivity and Developer Experience",
+      "abstract": "<p><span>After almost 2 years of intense attention givent to coding assistants, at the beginning of 2025, many organizations were disappointed by the measurable results. The recent arrival of coding assistance agents though has stirred up and reset expectations and the hype.</span><br>&nbsp;</p><p><span>This presentation gives an overview of the tooling and features in AI coding assistants today, and what new workflows they enable. It will particularly focus on the new agentic assistants that have brought us the vibe coding meme. How do they work? Are they replacing developers? What does this do to code quality? This whirlwind tour of the AI tooling landscape is based on Birgitta's experience as Thoughtworks' full time global SME for AI-assisted software delivery.</span></p>",
+      "start": 1744033500,
+      "end": 1744036500
+    },
+    {
+      "title": "Achieve Optimal Efficiency for your Developer Experience Teams",
+      "type": "presentation",
+      "speakers": [
+        "Fabien Deshayes - Monzo"
+      ],
+      "track": "Engineering Productivity and Developer Experience",
+      "abstract": "<p>Developer Experience teams are quite popular these days as organisations understand the value of optimising for developers productivity.</p><p>At Monzo, we have a Developer Experience team that aims to meaningfully increase velocity by landing exceptional developer experiences, for example we delivered a Feature Flag and Experimentation Platform across Monzo to increase experimentation by 50%.</p><p>In this presentation, we bring you insights and learnings from our experience, with particular focus on:</p><ul><li>Getting the right people and tools in place for a successful Developer Experience team</li><li>Building impactful Developer Experiences that matter</li><li>Communicating effectively about the impact of a Developer Experience team</li></ul>",
+      "start": 1744029300,
+      "end": 1744032300
+    },
+    {
+      "title": "Building Distributed Event-Driven Architectures Across Multi-Cloud Boundaries",
+      "type": "presentation",
+      "speakers": [
+        "Teena Idnani - Microsoft"
+      ],
+      "track": "Multi-Cloud and Hybrid Cloud Architectures",
+      "abstract": "<p>“Event-driven architecture” is a frequently discussed topic in architectural conversations. However, in today’s multi-cloud landscape, the more pressing question is: “How can we implement these patterns across cloud boundaries without compromising reliability?</p><p>While architects can create appealing event-driven designs, engineers face the daunting task of building distributed systems that must seamlessly integrate with numerous third-party services, manage cross-cloud communication, handle varying event delivery guarantees, and ensure consistency across diverse cloud services.</p><h3>Key Takeaways:</h3><ul><li>Understanding why distributed events behave unexpectedly across cloud boundaries and how to handle it</li><li>Building asynchronous systems spanning multi-cloud that are resilient and perform predictably under high load</li><li>Enhancing observability with a focus on health checks and monitoring across cloud boundaries</li><li>Challenges and approaches to maintain data consistency</li></ul>",
+      "start": 1744104900,
+      "end": 1744107900
+    },
+    {
+      "title": "Productivity Is Messing Around and Having Fun",
+      "type": "presentation",
+      "speakers": [
+        "Holly Cummins - Red Hat",
+        "Trisha Gee"
+      ],
+      "track": "Engineering Productivity and Developer Experience",
+      "abstract": "<p>Developer satisfaction, developer joy, and business results are strongly correlated. Developer productivity frameworks like SPACE recognize this, with Satisfaction being a key metric. And yet - our jobs are frustrating, filled with mindless work, and free of joy. How do we fix that? Is annoying waste inevitable? Can developer performance be tuned? Are productivity measurements helping or hurting us? And how can you persuade management to invest in boredom?</p><p>Except... it's not the boss we need to convince. Sometimes, it's ourselves. We're so in the habit of running to meet deadlines, running from one problem to the next, of aiming for 100% efficiency, we're the first ones to say \"I don't have time for fun\". In this talk, Holly and Trisha will try to convince you that fun isn't a luxury, but a necessity.</p><p>Holly is an expert on play at work, unwise automations, and polar bears. Trisha is an expert on performance tuning, tooling and productivity. Come to this talk to find out what these topics have in common.<br>&nbsp;</p>",
+      "start": 1744018500,
+      "end": 1744021500
+    },
+    {
+      "title": "Security and Architecture: To Betray One Is To Destroy Both",
+      "type": "presentation",
+      "speakers": [
+        "Shana  Dacres-Lawrence - ArchitectHer"
+      ],
+      "track": "The Changing Face of Architectural Practice",
+      "abstract": "<p>Flawed architecture introduces vulnerabilities that even the best security cannot mitigate. Likewise, a well-architected system without robust security remains a ticking time bomb in the face of modern threats. In this talk, I will explore how these two domains shape one another, how public demand for transparency has raised the stakes, and how aligning architecture and security is critical in an era of rapid innovation.</p><p>This talk will guide your thinking on how to uphold both security and architecture without betraying either. We will explore methods to ensure they remain consistent, coherent, and complementary, supporting each other in achieving the desired outcomes and safeguarding against the destruction of both.</p>",
+      "start": 1744202100,
+      "end": 1744205100
+    },
+    {
+      "title": "Scaling Cloud and Distributed Applications: Lessons and Strategies From chase.com, #1 Banking Portal in the US",
+      "type": "presentation",
+      "speakers": [
+        "Durai Arasan - JP Morgan Chase"
+      ],
+      "track": "Multi-Cloud and Hybrid Cloud Architectures",
+      "abstract": "<p>As businesses increasingly rely on cloud applications, efficient scaling becomes essential. This talk presents real-world strategies from Chase.com's cloud transformation, showcasing effective approaches to building resilient and high-performing systems.</p><p>We will address key challenges such as managing heavy loads and ensuring seamless failover, while sharing best practices like multi-cloud design, microservices adoption, and automation. Additionally, we'll explore the cultural shift necessary for successful cloud scalability.</p><p>Whether you're optimizing existing systems or building new ones, you'll gain practical insights to enhance reliability, performance, and cost-efficiency. Join us to transform cloud challenges into opportunities for growth.</p><p>Chase.com, the #1 banking portal in the United States, is a comprehensive online platform that empowers customers to make payments, manage their finances, and access a wide range of banking and financial services for individuals, businesses, and institutions.</p>",
+      "start": 1744128300,
+      "end": 1744131300
+    },
+    {
+      "title": "The Friction Fix: Building Collaborative Relationships Between Teams",
+      "type": "presentation",
+      "speakers": [
+        "Cat Morris - Syntasso",
+        "Diana Montalion - Mentrix"
+      ],
+      "track": "The Changing Face of Architectural Practice",
+      "abstract": "<p dir=\"ltr\"><span>In today's fast-paced and interconnected world, the friction between product and technology teams often feels inevitable. Misaligned mindsets, priorities, and contextual biases create obstacles that slow progress, stifle innovation, breed frustration and encourage blame.</span></p><p dir=\"ltr\"><span>Instead of fostering collaboration, we resort to tighter controls and increased separation, widening the gap even further. However, effective collaboration is crucial for delivering impactful results and driving success.</span></p><p dir=\"ltr\"><span>Diana Montalion (systems architect) and Cat Morris (product manager) will examine the distinct yet interconnected concerns of product and architecture, unraveling why friction arises and how it can be mitigated. Drawing from 30+ years of combined real-world experience, they will show how the flow of data and information—when presented in the right way and context—can bridge gaps and generate shared knowledge.</span></p><p dir=\"ltr\"><span>Attendees will gain practical strategies for designing systems and processes that enable knowledge flow. Empowering teams to make informed decisions and deliver impactful outcomes. Together.</span></p>",
+      "start": 1744195500,
+      "end": 1744198500
+    },
+    {
+      "title": "Building Embedding Models for Large-Scale Real-World Applications",
+      "type": "presentation",
+      "speakers": [
+        "Sahil Dua - Google"
+      ],
+      "track": "AI and ML for Software Engineers: Foundational Insights",
+      "abstract": "<p>Embedding models are at the core of search, recommendation, and retrieval-augmented generation (RAG) systems, transforming data into meaningful representations. We can adapt state-of-the-art large language models (LLMs) into embedding models that generate high-quality embeddings, but deploying these models in large-scale applications presents significant challenges.</p><p>This talk explores the end-to-end lifecycle of embedding systems, including:</p><ul><li>Leveraging LLMs for high-quality embeddings and adapting them for domain-specific use cases using contrastive learning.</li><li>Designing custom architectures optimized for use-case specific serving requirements.</li><li>Distilling large embedding models into smaller, production-friendly sizes.</li><li>Serving embeddings efficiently with optimization strategies like variable batch sizes and post-training quantization.</li></ul><p>Attendees will leave with practical strategies for scaling embedding models from research to production, ensuring high performance and efficiency in real-world applications like retrieving best matching documents, passages or images, data de-duplication, generating personalized recommendations, content clustering, and grounding GenAI responses using RAG approach.</p>",
+      "start": 1744124100,
+      "end": 1744127100
+    },
+    {
+      "title": "Securing AI Copilots: Strategies and Practices for Protecting Data",
+      "type": "presentation",
+      "speakers": [
+        "Andra Lezza - Sage"
+      ],
+      "track": "Resilient Engineering Practices for Security Against Modern Threats",
+      "abstract": "<p>The data behind AI copilots is not only their most critical asset but also a key strategic consideration for enterprises and SMBs alike. This talk examines the challenges of securing diverse AI architectures at scale—while navigating the intricacies of the AI supply chain, from data ingestion to model deployment. Gain practical insights into safeguarding sensitive data, ensuring integrity throughout the pipeline, and enabling innovation without compromising trust. Learn how to align your AI strategy with robust security practices that maximize value and maintain end-to-end resilience.</p>",
+      "start": 1744124100,
+      "end": 1744127100
+    },
+    {
+      "title": "Achieving Precision in AI: Retrieving the Right Data Using AI Agents",
+      "type": "presentation",
+      "speakers": [
+        "Adi Polak - Confluent"
+      ],
+      "track": "Modern Data Architectures",
+      "abstract": "<p>In the race to harness the power of generative AI, organizations are discovering a hidden challenge: precision. Models are only as effective as the data they access, yet most approaches to Retrieval-Augmented Generation (RAG) lack the dedicated, fine-tuned pipelines needed to ensure the right information is delivered at the right time.</p><p>Today, most RAG systems pull from vast, generalized data lakes, leading to noisy outputs and frustrating inefficiencies. The result? Wasted resources, inconsistent responses, and missed opportunities for real-time decision-making. But what if you could create an AI system that doesn’t just retrieve data—but understands its context, delivering precise, actionable insights in milliseconds?</p><p>This is where agenticRAG comes into play—a breakthrough in AI architecture that pairs dedicated retrieval pipelines with intelligent agents to deliver pinpoint accuracy. By segmenting your data storage and retrieval processes specifically for training vs. inference, you can achieve hyper-focused precision while dramatically reducing latency and costs.<br>Imagine an AI system that knows exactly what data it needs and how to get it with zero lag—a system that’s tuned to perform like a well-trained expert in your domain.</p><p>Curious to discover how you can optimize your AI applications for laser-focused accuracy? Join me as to learn more about AgenticRAG and fine tuning your models.</p>",
+      "start": 1744195500,
+      "end": 1744198500
+    },
+    {
+      "title": "So You’ve Decided To Do a Technical Migration",
+      "type": "presentation",
+      "speakers": [
+        "Sophie Koonin - Monzo"
+      ],
+      "track": "Emerging Trends in the Frontend and Mobile",
+      "abstract": "<p>It seems like there’s always a hot new library or framework promising great things. But people often forget about the pain and effort required to move from an old technology to a new one. How long will it take? If you finish, will it be worth it? And if you don’t, could it leave you in a worse place than where you started?</p><p>Drawing from my experience of the Typescript migration we recently completed at Monzo I’ll take you through some of the different outcomes of technical migrations and the things we learned along the way, and leave you with a toolkit to tackle your next migration project.</p>",
+      "start": 1744191300,
+      "end": 1744194300
+    },
+    {
+      "title": "Beyond Uptime: What the 'Metric' Is Going On with Green Software?",
+      "type": "presentation",
+      "speakers": [
+        "Sarah (Chun-Wei) Hsu - Goldman Sachs"
+      ],
+      "track": "Performance and Sustainability in Practice: How to Make Software Greener",
+      "abstract": "<p>Metrics such as availability and latency have long been the cornerstones of software engineering. Now, carbon emission is joining their ranks as a golden signal in a world increasingly focused on sustainability. But how do we effectively monitor and manage this new dimension of software performance?</p><p>In this session, Sarah will explore the growing field of green software monitoring. We will review the existing landscape, the available metrics and formats, and the challenges associated with accurately gauging environmental impact.</p><p>Additionally, we'll draw parallels to familiar SRE principles and tools, providing you with practical strategies for overseeing and reducing your software's carbon footprint. You'll discover how to utilise existing tools and methodologies, interpret and utilise data even when imperfect, and ultimately foster sustainable software development through informed decision-making to lessen your environmental impact.</p><p>Join us to discover how to get started with green monitoring, unlock data-driven insights, and transform your approach to software sustainability.</p>",
+      "start": 1744033500,
+      "end": 1744036500
+    },
+    {
+      "title": "Building Resilient Platforms: Insights from 20+ Years in Mission-Critical Infrastructure ",
+      "type": "presentation",
+      "speakers": [
+        "Matthew Liste - American Express"
+      ],
+      "track": "Multi-Cloud and Hybrid Cloud Architectures",
+      "abstract": "<p>In this talk, Matthew will describe lessons learned from over 20+ years of building cloud-based scalable, secure and stable infrastructure platforms for mission critical software in financial services (electronic trading, credit card processing etc.). This talk takes an IT Executive lens on building platforms that must balance constant innovation and systemic significance.</p><p>The audience should expect to take home rich insights into:</p><ul><li>what to expect when building and sustaining platforms for years</li><li>balancing maintaining currency vs client disruptions</li><li>no compromises on security and stability.</li></ul>",
+      "start": 1744109100,
+      "end": 1744112100
+    },
+    {
+      "title": "Empowering Teams: Decentralizing Architectural Decision-Making",
+      "type": "presentation",
+      "speakers": [
+        "Peter Hunter - Open GI",
+        "Elena Stojmilova - Open GI"
+      ],
+      "track": "The Changing Face of Architectural Practice",
+      "abstract": "<p>In today’s rapidly evolving tech landscape, centralised architectural decision-making can become a bottleneck to delivery performance and innovation. Through stories from our own journey, we’ll share how decentralising decisions improved alignment across teams, empowered faster decision-making, and fostered a culture of ownership. We'll share lessons learned implementing lightweight governance, defining clear architectural guardrails through architectural principles, and the tools to support decentralised decisions.</p>",
+      "start": 1744206300,
+      "end": 1744209300
+    },
+    {
+      "title": "Lessons Learned From Shipping AI-Powered Healthcare Products",
+      "type": "presentation",
+      "speakers": [
+        "Clara Matos - Sword Health"
+      ],
+      "track": "Health Tech",
+      "abstract": "<p>This talk provides valuable insights into Sword Health's real-world experience implementing AI in healthcare, focusing on practical strategies for developing consistent, safe and reliable AI-powered healthcare solutions. Through a case study format, attendees will learn concrete approaches to building guardrails, evaluation frameworks, and data-driven development practices. The session will be valuable for those looking to understand the challenges of deploying AI systems in real-world settings.</p>",
+      "start": 1744018500,
+      "end": 1744021500
+    },
+    {
+      "title": "Mobile Server-Driven UI at Scale",
+      "type": "presentation",
+      "speakers": [
+        "Rafael Ring - Nubank"
+      ],
+      "track": "Emerging Trends in the Frontend and Mobile",
+      "abstract": "<p>Delivering changes to mobile applications is always painful: dealing with store reviews, users that don't update their apps and multiple concurrent versions being used at the same time. Server-Driven UI is an architectural shift that helps teams deal with these problems and allow them to move faster by reducing time to delivery of new features or bug fixes.</p><p>At Nubank, we've designed a backend-driven UI framework that has revolutionized how our 3000+ engineers develop our mobile application, enabling them to modify user interfaces, change business logics and create new product flows without app releases. Currently, our framework powers almost every new flow and more than half of our application, serving over 1000 different screens in our product flows to over 100 million customers across multiple countries.</p><p>In this talk, we'll explore the advantages and challenges of Server-Driven UIs and bring some insights on the whole journey that led to our current framework:</p><ul><li>Impact Metrics: How Server-Driven UI has increased our deployment frequency to several times per day, reduced feature rollout times from weeks to minutes, and minimized the time to address bugs.</li><li>Engineering Efficiency: How our framework simplified the engineering effort to develop UIs significantly, with a 40% decrease in the resources needed for new feature deployments.</li><li>Creating a Server Driven app: We'll take a look under the hood on how our framework works and examples of UIs running on our app.</li><li>Pitfalls: What are patterns to avoid, what doesn't work and which mistakes have we made across the multiple iterations that got us to our current state</li><li>Future Challenges: As we scale, we face new challenges. We'll discuss these and our strategies for addressing them, ensuring our framework can keep meeting our needs.</li></ul>",
+      "start": 1744202100,
+      "end": 1744205100
+    },
+    {
+      "title": "Scaling to 100+ as a Director: Lessons From Growing Engineering Organizations",
+      "type": "presentation",
+      "speakers": [
+        "Thiago Ghisi - Nubank"
+      ],
+      "track": "The Path to Senior Engineering Leadership",
+      "abstract": "<p>When I took on the Director of Engineering role at Nubank, I had no idea just how many times I’d need to reinvent my leadership style. In the span of three years, my organization grew from 30 engineers to over 100, forcing me to recalibrate everything from meeting structures to team compositions to decision-making frameworks to scale myself.</p><p>I remember feeling like I was changing the wheels on a speeding train—trying to keep velocity while fundamentally reworking how we operated.</p><p>In this talk, I’ll share the highs, lows, and practical lessons from each year of this journey. We’ll explore the patterns that emerged as I navigated the organizational change: experimenting to find the right team topologies, building the leadership team, and embracing reorganizations as a natural part of scaling.</p><h3>Key Takeaways:</h3><ul><li dir=\"ltr\"><strong>Crafting Team Topologies for Scope, Autonomy, and Flow</strong><span> – Strategies for designing focused teams minimizing dependencies to maximize autonomy and flow.</span></li><li dir=\"ltr\"><strong>Up-leveling for Resilience &amp; Sustainability</strong><span> – How to raise seniority, rotate expertise, and optimize team sizing and tenure distribution to enhance knowledge transfer, reduce silos, and build resilient squads that excel in crisis management, sustain operations, and tackle complex technical challenges.</span></li><li dir=\"ltr\"><strong>Building an Empowered &amp; Coherent Leadership Team</strong><span> – Approaches for spotting and nurturing leaders who can carry the vision &amp; the strategy through multiple layers of the organization.</span></li><li dir=\"ltr\"><strong>Continuous Reorganizations as a Feature, Not a Bug</strong><span> – How to view reorgs as iterative improvements rather than chaotic disruptions, and the communication strategies that make them stick.</span></li></ul>",
+      "start": 1744037700,
+      "end": 1744040700
+    },
+    {
+      "title": "Panel: Taking Architecture Out of the Echo Chamber",
+      "type": "presentation",
+      "speakers": [],
+      "track": "The Changing Face of Architectural Practice",
+      "abstract": "<p><span>Architecture is increasingly about ensuring that the right conversations are happening at the right time and involving the right people in the right ways. More and more it’s important that those conversations involve a broader range of skillsets and perspectives that those of software and systems architects. This panel will bring together the presenters in this track so you can hear their perspectives in conversation, and present them with some of your own questions and puzzlers.</span></p>",
+      "start": 1744210500,
+      "end": 1744213500
+    },
+    {
+      "title": "Trust No One: Securing the Modern Software Supply Chain with Zero Trust",
+      "type": "presentation",
+      "speakers": [
+        "Emma Yuan Fang - EPAM Systems"
+      ],
+      "track": "Resilient Engineering Practices for Security Against Modern Threats",
+      "abstract": "<p>Can you truly trust your software supply chain? As cloud-native software development surges, threat actors increasingly target the supply chain, exploiting vulnerabilities in CI/CD pipelines, dependencies, and container images. These risks can be further amplified by human factors such as misconfigurations and flawed access control policies.</p><p>In this talk, we will explore how seemingly trusted entities within your DevOps pipelines can be exploited by threat actors. We will discuss the critical need for a proactive approach to defend against upstream threats by verifying each interaction within the system. Learn how to decipher Zero Trust principles and translate them into security controls to protect your software supply chain.</p><h3>Key Objectives:</h3><ul><li>Understand the threat landscapes and security challenges in the software supply chain.</li><li>Discuss the key principles of the Zero Trust and the advantages of applying this approach to enhance the security posture of your DevOps environment and CI/CD Pipelines.</li><li>Lean practical guidance to defend against supply chain attacks by implementing Zero Trust Security.&nbsp;</li></ul>",
+      "start": 1744115700,
+      "end": 1744118700
+    },
+    {
+      "title": "Secure by Design: Building Security into Engineering Workflows and Teams",
+      "type": "presentation",
+      "speakers": [
+        "Stefania Chaplin - DevStefOps"
+      ],
+      "track": "Resilient Engineering Practices for Security Against Modern Threats",
+      "abstract": "<p>Security doesn't have to be a blocker- it can be an enabler. In this session, we’ll explore how to seamlessly integrate secure development practices into engineering workflows while fostering a culture of collaboration and shared ownership. From integrating security into IDEs, build pipelines, and CI/CD workflows to empowering developers with real-time vulnerability detection, we’ll showcase practical strategies to make security second nature for your team.</p><p>But secure development is about more than just tools - it’s about people. We'll discuss how to break down silos between developers and security teams, embed security champions in your organization, and leverage engaging, gamified training to build confidence and capability in secure coding practices.</p><p>Walk away with actionable insights to shift security left, enable your team to innovate without fear, and create workflows that blend security seamlessly into everyday development. Let’s build software that’s secure by design - together.</p>",
+      "start": 1744119900,
+      "end": 1744122900
+    },
+    {
+      "title": "Lessons Learned From Building LinkedIn’s First Agent: Hiring Assistant",
+      "type": "presentation",
+      "speakers": [
+        "Karthik Ramgopal - LinkedIn",
+        "Daniel Hewlett - LinkedIn"
+      ],
+      "track": "Architectures You've Always Wondered About",
+      "abstract": "<p dir=\"ltr\"><span>In October 2024, we announced LinkedIn’s first agent, </span><a href=\"https://business.linkedin.com/talent-solutions/hiring-assistant\" target=\"_blank\"><u>Hiring Assistant</u></a><span> to a select group of LinkedIn customers. Designed to streamline a recruiter’s workflow, Hiring Assistant automates time-consuming tasks, from intake to interviews, allowing recruiters to focus on the most strategic and people-centric aspects of their roles.</span></p><p dir=\"ltr\"><span>Recruiters can upload job descriptions, intake notes, and job postings to the Hiring Assistant, which then uses this information to generate role qualifications and build a pipeline of qualified candidates. Throughout the process, recruiters remain actively involved, and can provide guidance to the Hiring Assistant about its actions to ensure alignment. This continuous feedback loop enables Hiring Assistant to learn each recruiter’s preferences, becoming increasingly personalized and effective over time.</span></p><p dir=\"ltr\"><span>Building this product required pushing the boundaries of using Large Language Models (LLMs) for large-scale automation, achieving personalization at scale while maintaining product quality and upholding our </span><a href=\"https://www.linkedin.com/blog/member/trust-and-safety/responsible-ai-principles?lipi=urn%3Ali%3Apage%3Ad_flagship3_pulse_read%3BjBiVzjQAQN2cx%2FhEJQPATw%3D%3D\" target=\"_blank\"><u>responsible AI principles</u></a><span>, and pioneering new UX paradigms for human-agent interaction. This talk will provide an overview of the Generative AI product development evolution at LinkedIn, culminating in the most technically complex product built at LinkedIn using this tech, the Hiring Assistant. We will then delve into the system architecture of the Hiring Assistant, highlighting key design decisions made to ensure efficient scalability, security, robust operability, and thorough quality evaluation. The talk will conclude with key lessons we’ve learned, offering valuable insights for anyone building real-world, production-grade AI agents.</span></p>",
+      "start": 1744041900,
+      "end": 1744044900
+    },
+    {
+      "title": "What I Wish I Knew When I Started with Green IT",
+      "type": "presentation",
+      "speakers": [
+        "Ludi AKUE - Bpifrance"
+      ],
+      "track": "Performance and Sustainability in Practice: How to Make Software Greener",
+      "abstract": "<p>The path to sustainable technology involves complex technical and organizational decisions that aren't immediately obvious from industry best practices. This talk shares seven key lessons drawn from implementing Green IT at scale in a scaleup environment and in a public bank institution. I'll examine architectural impacts through a microservices to modular monolith migration and explore how FinOps practices align with energy efficiency.&nbsp;</p><p>Using actual implementation metrics and case studies, I'll discuss practical approaches to measurement challenges, effective change management strategies, and the critical role of full-stack optimization. I'll also address the emerging challenges of AI energy consumption in production and evaluate current approaches being tested in the industry. Tech leaders will leave with actionable frameworks for evaluating Green IT initiatives and implementing effective measurements.</p>",
+      "start": 1744018500,
+      "end": 1744021500
+    },
+    {
+      "title": "Ecologies and Economics of Language AI in Practice",
+      "type": "presentation",
+      "speakers": [
+        "Jade Abbott - Lelapa AI"
+      ],
+      "track": "Performance and Sustainability in Practice: How to Make Software Greener",
+      "abstract": "<p><strong>Lessons learned from building language models in Africa: under strict data constraints in non-western environments.</strong></p><p>The global proliferation of language models has predominantly followed a Western-centric approach that neglects cultural and environmental sustainability. This talk draws on firsthand experiences building language models in Africa under significant data constraints to challenge prevailing assumptions in AI development, while demonstrating how Big Tech's commoditization threatens both ecological and cultural sustainability.</p><p>Through case studies and practical examples, this presentation will show that the \"bigger is better\" paradigm is reaching diminishing returns while providing attendees with actionable frameworks for creating models that respect both environmental limitations and cultural contexts. Participants will gain practical insights into developing language AI that is more effective, economical, and sustainable, offering a roadmap for implementing human-centered AI solutions that better serve diverse global communities.</p><p>&nbsp;</p>",
+      "start": 1744022700,
+      "end": 1744025700
+    },
+    {
+      "title": "Local First – How To Build Software Which Still Works After the Acquihire",
+      "type": "presentation",
+      "speakers": [
+        "Alex Good - Ink & Switch"
+      ],
+      "track": "Performance and Sustainability in Practice: How to Make Software Greener",
+      "abstract": "<p>Much of the software we use derives its value from being networked, sometimes that's about being able to use software on many devices, often it's about being able to collaborate with other people. This has enabled enormous productivity improvements and made us all more flexible, but it has a cost. The networked part of these applications is almost always inside a private entity, which means if that entity goes away - maybe it's acquired by a competitor, or just decides you aren't worth the money, or any of a hundred other things which we've all seen happen - then the people who derive value from the software are left with a useless app.</p><p>How could we make it possible for users to repair these broken apps? I'll describe how a set of design principles called \"local first\" enables us to build networked software which can outlive the companies that created it. We'll explore the current state of the technologies which enable this approach, and also some of the open problems and the opportunities which are arising in a world increasingly wary of depending on large corporate networks.</p>",
+      "start": 1744029300,
+      "end": 1744032300
+    },
+    {
+      "title": "The Efficiency Paradox and How to Save Yourself and the World",
+      "type": "presentation",
+      "speakers": [
+        "Holly Cummins - Red Hat"
+      ],
+      "track": "Performance and Sustainability in Practice: How to Make Software Greener",
+      "abstract": "<p>Inefficiency is ruining our planet and our lives. Efficiency is ruining our happiness, and weirdly, it’s also ruining our efficiency. Heeeeelppp!? What’s a techie to do? In this talk, Holly walks through a range of techniques that can be used to find and eliminate software waste and reduce climate impacts. For example, zombie servers and slow code are a big climate problem, but the vrrrooom model gives us double-win hope.</p><p>But machine efficiency isn’t much use without human efficiency. The good news is that there isn’t as much of a tradeoff as you might think between these two types of efficiency. Sorting out machine efficiency often helps humans, too. For example, the Quarkus Java framework uses many interesting waste-reduction techniques. These optimizations have the dual benefit of speeding up computers, and also speeding up people. &nbsp;</p><p>So far, so good, but we need to be careful we don’t end up accidentally optimizing the wrong things, and making stuff worse. 100% utilization is not sustainable for either humans, or people. It’s not even very efficient (remember the paradox part?). It turns out, thinking about efficiency needs systems thinking. Holly will draw lessons from performance engineering, mathematics, economics, and psychology to give guidance on how to achieve more by doing less.&nbsp;</p>",
+      "start": 1744041900,
+      "end": 1744044900
+    },
+    {
+      "title": "Empower Your Developers: How Open Source Dependencies Risk Management Can Unlock Innovation",
+      "type": "presentation",
+      "speakers": [
+        "Celine Pypaert - Johnson Matthey"
+      ],
+      "track": "Resilient Engineering Practices for Security Against Modern Threats",
+      "abstract": "<p>As security practitioners, we face the challenge of driving innovation whilst needing to balance security risks. This talk explores how to overcome this challenge by managing Open Source dependencies more effectively, automating patching, and establishing better security policies and processes to help teams harness the power of Open Source more securely.</p>",
+      "start": 1744109100,
+      "end": 1744112100
+    },
+    {
+      "title": "Supply Chain Security and the Real World: Lessons From Incidents",
+      "type": "presentation",
+      "speakers": [
+        "Adrian Mouat - Chainguard"
+      ],
+      "track": "Resilient Engineering Practices for Security Against Modern Threats",
+      "abstract": "<p>Supply chain security is becoming more and more important, but it is often talked about in abstract and general terms that do little to help the average organization.</p><p>Sophisticated and not-so sophisticated breaches and attacks in recent years have taught us a lot about the soft spots that attackers target. As an industry, it's time we turned these insights into actionable advice for the average devops team.</p><p>This talk will look at some real world examples of supply chain compromises and translate the lessons into concrete actions that you can take today to help secure your builds and pipelines.</p><p>We will look at:</p><ul><li>The xz attack and what it means for trust</li><li>The Solarwinds breach and how the industry reacted</li><li>CVEs, scanning tools, and how useful they are as a metric</li><li>What the average company or OSS project can do to prevent and mitigate attacks</li></ul>",
+      "start": 1744104900,
+      "end": 1744107900
+    },
+    {
+      "title": "Beyond the Warehouse: Why BigQuery Alone Won’t Solve Your Data Problems",
+      "type": "presentation",
+      "speakers": [
+        "Sarah Usher - Tech Risers Women"
+      ],
+      "track": "Modern Data Architectures",
+      "abstract": "<p>Many organizations mistake the adoption of a data warehouse, like BigQuery, as the golden ticket to solving all their data challenges. But without a robust data strategy and architecture, you’re simply shifting chaos into the cloud. This talk explores why a warehouse is just one piece of the puzzle and dives into the tools, processes, and structures that can enhance your architecture beyond the warehouse. We’ll also cover practical strategies for recovering from poorly implemented data systems and building sustainable and adaptable data infrastructure.</p>",
+      "start": 1744210500,
+      "end": 1744213500
+    },
+    {
+      "title": "The Data Backbone of LLM Systems",
+      "type": "presentation",
+      "speakers": [
+        "Paul Iusztin - Decoding ML"
+      ],
+      "track": "Modern Data Architectures",
+      "abstract": "<p>Any LLM application has four dimensions you must carefully engineer: the code, data, models and prompts. Each dimension influences the other. That's why you must learn how to track and manage each. The trick is that every dimension has particularities requiring unique strategies and tooling. That's why directly applying SWE and DevOps principles that apply to the code does not work for others.</p><p>This presentation will dig into the data dimension and how it looks when building LLM applications. We will start by exploring a general framework that acts as the foundation. We will look into how the data flows, focusing on the data and features pipeline and how the data should be stored to be correctly shared, versioned, processed and analyzed for RAG, training and inference. Next, we will zoom into how the data is accessed during LLM fine-tuning and within the inference pipeline, which can be implemented as an RAG workflow or as something more complex, such as an agent.</p><p>To fully understand how the framework works (for building LLM applications), we will look at two concrete use cases, architecting the data layer of the following systems:</p><ul><li>An LLM Twin: Your Digital AI Replica (Use case used in our LLM Engineer's Handbook)</li><li>A Second Brain AI Assistant (Use case used in our latest open-source course, freely available on Decoding ML)</li></ul><p>We will present specific implementation details, tooling, and problems during these two use cases to fully understand an LLM system's data-related generalities and particularities.<br>&nbsp;</p>",
+      "start": 1744206300,
+      "end": 1744209300
+    },
+    {
+      "title": "Continuous Delivery Is Not Possible Without Pair Programming: Lessons From SpareBank 1 and SINTEF in Norway",
+      "type": "presentation",
+      "speakers": [
+        "Asgaut Mjølne Söderbom - SpareBank 1 Utvikling",
+        "Ola Hast - SpareBank 1 Utvikling "
+      ],
+      "track": "Engineering Productivity and Developer Experience",
+      "abstract": "<p>In the autumn of 2021, SpareBank 1, one of the largest savings banks in Norway, decided to take a new direction by significantly increasing how often we deployed to production, going from daily to hourly frequency. We quickly experienced something very interesting: it &nbsp;was nearly impossible with this high frequency of deployments without doing pair/mob programming.</p><p>This shift proved transformative: it enhanced development speed, focus, and flow while reducing errors. Developers also reported greater satisfaction, frequently citing improved focus and smoother workflows. The quality of delivered software significantly improved and customers got better products.</p><p>In this presentation, we will explain how we changed course, how we tested continuous deployment with tiny changes, and how the number of deployments increased dramatically. We will explain why deploying small changes while developing (and not after it is finished) has become crucial if you want to do modern software development.</p><p>You will learn about the positive consequences we experienced on reducing use of pull requests and test environments, improved pair/mob programming, quality, focus, flow, psychological safety, and more - without it being a goal in itself.</p><p>Furthermore, we will explain how we, together with SINTEF, have done so-called \"pair programming interventions\" with teams in periods of 3-4 weeks, and successfully introduced pair/mob programming in a successful way.</p>",
+      "start": 1744022700,
+      "end": 1744025700
+    },
+    {
+      "title": "Your Platform is Not an Island: Embracing Evolution in Your Ecosystem",
+      "type": "presentation",
+      "speakers": [
+        "Rachael Wonnacott - Fidelity International"
+      ],
+      "track": "Engineering Productivity and Developer Experience",
+      "abstract": "<p>As with most forms of engineering it is easy to talk about theory in the abstract, but typically more nuanced to implement. Platform engineering is no exception. While the term has become increasingly popular over the last few years, it is a concept that is organically evolving within industry. For many Platform Engineering began as a means to overcome the challenges of consistent adoption of DevOps across an organization, but increasingly it is being sold as a way to improve the Developer Experience. While sociotechnical design, culture and developer experience have emerged as defining factors in successful platforms they require a more holistic view to platform design. This talks addresses the elephant in the room, that platforms are really about business value and while DevEx is a leading factor in achieving this, it is second to it. Each organization needs to reconcile current maturity, culture, and desired outcome to design the platform that delivers the greatest business value.</p><p>One size does not fit all: In many cases the most technically elegant solution may not be the most valuable deliverable. This talk discusses how to weigh up developer experience, measurable profit, and platform best practice to create platforms that deliver more immediate value to the business. Rachael shares the lessons of first-hand experience building a strategic platform that fits into a wider software development lifecycle across the Enterprise, and discovering that 'Your platform is not an island'.</p>",
+      "start": 1744037700,
+      "end": 1744040700
+    },
+    {
+      "title": "Hybrid Cloud-Native Networking in Enterprise - Some Assembly Required",
+      "type": "presentation",
+      "speakers": [
+        "Louis Ryan - Solo.io"
+      ],
+      "track": "Multi-Cloud and Hybrid Cloud Architectures",
+      "abstract": "<p>Delivering a 'useful' network in the typical enterprise has always been challenging. Whether it's the rush to containerization, business goals around accelerated value delivery or regulatory pressure to be multi-cloud or even resurrect your own data centers, that job keeps getting harder. How should&nbsp;we evaluate the tools we use and how do we want them to compose to be useful?</p>",
+      "start": 1744124100,
+      "end": 1744127100
+    },
+    {
+      "title": "Things SaaS Builders Keep Getting Wrong",
+      "type": "presentation",
+      "speakers": [
+        "Jon Topper - The Scale Factory"
+      ],
+      "track": "Multi-Cloud and Hybrid Cloud Architectures",
+      "abstract": "<p>Building, deploying, and operating software is hard, and that goes double when you're building SaaS. We'll look at the ways in which teams building this type of software often unintentionally make life difficult for themselves, and suggest how that can be avoided, through good architecture, DevOps practices, and operations.</p>",
+      "start": 1744119900,
+      "end": 1744122900
+    },
+    {
+      "title": "Panel: Building a Culture that Works",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Building a Culture that Works",
+      "abstract": "<p><strong>It’s Everyone’s Responsibility To Build a Great Culture—How Do You Do It?</strong></p><p>Culture isn’t just the responsibility of leadership—everyone, from senior leadership to individual contributors, shapes it. But what does it truly take to foster a culture where people thrive, innovate, and collaborate effectively?</p><p>In this panel, we’ll bring together voices from different levels of leadership, diverse company stages, and varied industry experiences to explore how culture is built and sustained in real-world environments.</p><p>Expect a dynamic discussion filled with actionable takeaways, fresh perspectives, and real stories from those actively shaping their company cultures. Whether you’re a leader, an individual contributor, or somewhere in between, this session will inspire you to actively build the environment where you and those around you thrive.</p>",
+      "start": 1744128300,
+      "end": 1744131300
+    },
+    {
+      "title": "Creating Impactful Teams Across Diverse Work Environments",
+      "type": "presentation",
+      "speakers": [
+        "Natan Žabkar Nordberg - Topi"
+      ],
+      "track": "Building a Culture that Works",
+      "abstract": "<p>Culture is the backbone of any thriving organization. It shapes how we work, how we connect, and the products we create. Yet, culture often feels like an intangible, immovable force beyond our control. What if that perception is wrong? What if every individual, regardless of their role or seniority, could meaningfully influence their company's culture and create an environment where teams thrive?</p><p>In this talk, I will draw on my experiences across diverse organizations — ranging from a global tech corporation to fast-paced startups, from in-office teams to fully remote environments. I will share experiences and insights into how diversity in lived experiences, thinking, and knowledge directly impacts not only team dynamics but also the quality of the products we deliver.</p><p>Key takeaways include:</p><ul><li>Defining and nurturing culture: How to identify what works for your team and why a one-size-fits-all approach fails.</li><li>Diversity and inclusion: How to recognize and leverage diversity beyond traditional metrics to enhance team effectiveness.</li><li>Actions independent of seniority: Practical strategies for fostering cultural growth through both macro-level initiatives (e.g. hiring practices) and micro-level actions (e.g. everyday team interactions).</li><li>Remote and hybrid dynamics: You will gather techniques to identify the unique challenges and opportunities of cultivating a positive culture in remote and hybrid work environments.</li></ul><p>Attendees will leave with actionable ideas they can implement within a week to start shaping a culture that works — not just because it feels right, but because it drives better outcomes for teams and businesses alike.</p>",
+      "start": 1744109100,
+      "end": 1744112100
+    },
+    {
+      "title": "Beyond the Code: Hiring for Cultural Alignment",
+      "type": "presentation",
+      "speakers": [
+        "Alicia Collymore - Incident.io"
+      ],
+      "track": "Building a Culture that Works",
+      "abstract": "<p>Technical interviews typically focus on coding skills, but cultural alignment is equally crucial for team success. This talk explores how to assess cultural fit during the hiring process, examining specific attributes that matter in engineering teams and techniques for creating interviews where candidates can authentically demonstrate their working style. Attendees will learn strategies for balancing technical assessment with cultural evaluation while avoiding vague notions of \"culture.\"</p>",
+      "start": 1744115700,
+      "end": 1744118700
+    },
+    {
+      "title": "Achieving a Culture That Works: Inclusive Leadership that Drives Lasting Success",
+      "type": "presentation",
+      "speakers": [
+        "Matthew Card - BBC"
+      ],
+      "track": "Building a Culture that Works",
+      "abstract": "<p>Join Matthew as he explores the essential role of inclusive leadership in building high-trust, resilient, and engaged teams. Drawing from real-world experience, this talk will uncover how leaders can create a culture that not only motivates but sustains long-term success. Learn how fostering psychological safety, embracing diverse perspectives, and leading with authenticity can drive innovation and team performance. Expect actionable strategies to navigate challenges, cultivate resilience, and inspire a workplace where everyone can thrive.</p>",
+      "start": 1744124100,
+      "end": 1744127100
+    },
+    {
+      "title": "Platform Engineering as a Practice of Sociotechnical Excellence",
+      "type": "presentation",
+      "speakers": [
+        "Lesley Cordero - The New York Times"
+      ],
+      "track": "Building a Culture that Works",
+      "abstract": "<p>In this talk, we’ll explore DevOps as a foundational model for technical leadership that directly supports organizational sustainability. We'll focus on how platform engineering teams are uniquely positioned to lead by example through the intentional application of DevOps principles and platform practices.</p><p>Platform Engineering sits at the intersection of infrastructure, developer experience, and product delivery. By designing internal platforms that prioritize automation, reliability, and developer feedback, platform engineers can shape how technical excellence scales across an organization. This talk will dig into how to embed DevOps principles -- like strong ownership models, feedback-driven iteration, and psychologically safe deployment processes -- into platform tooling and workflows. We’ll cover strategies for reducing cognitive load, enabling fast and safe deploys, and driving cross-team alignment through platform decisions.</p><p>Key Takeaways:</p><ul><li>How platform teams can operationalize DevOps by codifying reliability, security, and velocity into shared infrastructure and tooling</li><li>How to use platform abstractions to align developer experience with business priorities</li><li>Why platform engineering is essential to scaling both systems and culture, and how that supports long-term organizational resilience</li><li>How to design and maintain technical boundaries that encourage cross-functional collaboration and reduce organizational silos.</li></ul>",
+      "start": 1744104900,
+      "end": 1744107900
+    },
+    {
+      "title": "Panel: The Future of Human Code in Healthcare",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Health Tech",
+      "abstract": "<p>Details coming soon.</p>",
+      "start": 1744037700,
+      "end": 1744040700
+    },
+    {
+      "title": "Real-Time Health Tech at Scale: Cloud and Network Lessons",
+      "type": "presentation",
+      "speakers": [
+        "Dean Powell - Proximie"
+      ],
+      "track": "Health Tech",
+      "abstract": "<p>In the world of digital health, building scalable platforms isn't just about uptime and APIs — it's about navigating complex networking environments, regulatory zones, and deployment diversity. In this talk, we’ll walk through the design and delivery of a health tech platform that meets these challenges head-on.</p><p>We’ll explore:</p><ul><li>Real-world networking constraints in clinical and remote settings — and how to design around them</li><li>A high-level cloud architecture that balances scalability, security, and compliance for med tech applications</li><li>Strategies for delivering consistent software environments across varied regions and infrastructures<br>&nbsp; &nbsp;</li></ul><p>We’ll also touch on real-time video processing in healthcare settings — from low-latency pipelines to edge-to-cloud orchestration — and share lessons learned building systems that need to be both fast and reliable under pressure.</p>",
+      "start": 1744033500,
+      "end": 1744036500
+    },
+    {
+      "title": "Transforming Primary Care: A Case Study in Evolving From Start-Up To Scale-Up",
+      "type": "presentation",
+      "speakers": [
+        "Leander Vanderbijl - Kry/Livi"
+      ],
+      "track": "Health Tech",
+      "abstract": "<p>As our company developed through startup and scale up phases, our systems grew larger and more complex. Our usage increased dramatically and our requirements ballooned. In this session, we will look at how our software and architecture developed into a Conway’s law spider web of interdependent services. We will show how we used domain driven principles to give our systems structure and provide guidance to our developers. We will study the complexities of operating in the health care industry and analyse the strategies we used and the lessons learned as the company evolved and found product market fit.</p>",
+      "start": 1744029300,
+      "end": 1744032300
+    },
+    {
+      "title": "From Symptom Checkers to Smart Chatbots: The Role of AI in Virtual Care",
+      "type": "presentation",
+      "speakers": [
+        "Andre Riberio - Healthily"
+      ],
+      "track": "Health Tech",
+      "abstract": "<p>As digital transformation reshapes healthcare, virtual care has rapidly evolved from a niche convenience to a foundational element of modern health systems. This talk explores the accelerating rise of telemedicine, remote monitoring, and AI-powered self-care tools—unpacking the trends, challenges, and opportunities that define the future of virtual care.</p><p>At the forefront of this shift is Healthily, a pioneering healthtech platform redefining how people access, understand, and manage their health. Through its medically-validated AI symptom checker, self-care libraries, smart health tracking tools, and an in-development chatbot that lets users get guidance through everyday medical questions, Healthily empowers users to take informed action—even before they speak to a clinician. In doing so, it supports early intervention, reduces strain on healthcare systems, and enhances the overall quality of care.</p><p>This session will delve into Healthily's unique approach to blending clinical expertise with cutting-edge technology, its mission to deliver safe, personalized guidance at scale, and how it aims to bridge the gap between self-care and professional care—paving the way for a more proactive, inclusive, and human-centric future of virtual health.</p>",
+      "start": 1744041900,
+      "end": 1744044900
+    },
+    {
+      "title": "Architecture in the Lead: Scaling Today, Shaping Tomorrow",
+      "type": "presentation",
+      "speakers": [
+        "Matthew Clark - BBC",
+        "Ian Arundale - BBC"
+      ],
+      "track": "Architectures You've Always Wondered About",
+      "abstract": "<p>The BBC’s websites and apps handled well over 100 million visitors in 2024, with 40 million people arriving on UK Election night alone. That’s a lot of scale for an architecture to handle, but it’s just the beginning. True success comes not just from scaling to meet today’s demand, but from shaping what comes next. In this talk, we’ll explore how architecture can lead change in an organisation, driving reliability, security, and growth at scale. We’ll look at approaches to influence decisions, set the technical vision, and guide organizations to ride the wave of technological change, continuing to innovate long after the first 100 million arrive.</p>",
+      "start": 1744018500,
+      "end": 1744021500
+    },
+    {
+      "title": "Kraken's Serverless Architecture for Keeping the Grid Green",
+      "type": "presentation",
+      "speakers": [
+        "Kevin Bowman - Kraken Technologies"
+      ],
+      "track": "Architectures You've Always Wondered About",
+      "abstract": "<p>The green energy transition is real, and happening, but it needs technology to make it successful. Everything from renewable energy generation onto the grid, to how consumers use energy, needs technology to be effective and keep up with today's demands. This talk will cover how Kraken Technology uses modern cloud architectures to enable energy grids to scale and meet the demands of the future.</p>",
+      "start": 1744033500,
+      "end": 1744036500
+    },
+    {
+      "title": "Fast Eventual Consistency: Inside Corrosion, the Distributed System Powering Fly.io",
+      "type": "presentation",
+      "speakers": [
+        "Somtochi Onyekwere - Fly.io"
+      ],
+      "track": "Architectures You've Always Wondered About",
+      "abstract": "<p>This talk explores Corrosion, an open-source solution built on SQLite that delivers fast, eventually consistent replication across distributed nodes. Initially developed at Fly to replace Consul for service discovery, Corrosion has evolved to power the platform, enabling the rapid dissemination of machine and service data across numerous nodes with a p99 latency of one second. Leveraging technologies such as Conflict-free Replicated Data Types (CRDTs) for conflict resolution, the SWIM gossip protocol for membership management, and the QUIC transport protocol, Corrosion is implemented in Rust and is open-source. In this talk, we will explore these technologies, dive into architectural and design decisions, and discuss how Corrosion is used in production at Fly. Whether you're familiar with these concepts or they're new to you, join us for an in-depth look at Corrosion.</p>",
+      "start": 1744037700,
+      "end": 1744040700
+    },
+    {
+      "title": "Shine Bright as an IC: Growing Yourself As Your Company Grows",
+      "type": "presentation",
+      "speakers": [
+        "Suhail Patel - Monzo"
+      ],
+      "track": "The Path to Senior Engineering Leadership",
+      "abstract": "<p>Being part of a growing company is a fantastic opportunity to level yourself as an individual very rapidly, if you choose to grasp it. You've already immersed yourself with context and you might be the go to person for a key area of the organization. Having a brag document of all your great code and adventures in writing software is only achieving half the job.</p><p>Getting involved in \"extra curricular\" activities such as hiring, coaching / mentoring, writing proposals and building your community in and outside of your organisation can really boost your career. You need to have technical mastery but also craft your organisational relationships to be a leader that gets key projects unblocked and delivered.</p><p>This talk brings an insight into what these activities look like and I want to give a cheat sheet on how to be great at them from day one. If you are eyeing up getting to Staff+/Principal level, this is the talk for you.</p><h3>Key Takeaways:</h3><ul><li>Many folks seem to think that just technical mastery and getting deeper into the code will get them that promotion. We will touch on why that is not the case in many organizations.</li><li>We will cover being a great interviewer, how mentoring &amp; coaching can fundamentally alter your perspective in how you write code, having really productive 1:1s with your colleagues and how this all links up into building a persona within your organization.</li><li>We will use examples from my own career and mistakes I've made just focusing on the code to steer the audience towards making career investments that actually get them noticed within their organizations.<br>&nbsp;</li></ul>",
+      "start": 1744041900,
+      "end": 1744044900
+    },
+    {
+      "title": "Platforms for Secure API Connectivity With Architecture as Code",
+      "type": "presentation",
+      "speakers": [
+        "Jim Gough - Morgan Stanley"
+      ],
+      "track": "Connecting Systems: APIs, Protocols, Observability",
+      "abstract": "<p>As microservices and complex platforms become the standard, ensuring secure connectivity while maintaining a smooth developer experience is a significant challenge. Traditional security models often introduce friction, slowing down innovation and deployment. Regulated industries must balance stringent security controls with the need for agility.</p><p>In this session, you will learn how Architecture as Code with CALM, an open-source initiative from FINOS, provides a structured approach to defining Patterns and Architectures that incorporate security and resilience from the start. You will see how CALM CLI can generate and validate architectures against predefined patterns, ensuring security compliance without compromising developer experience.</p><p>Through a live demo, you will observe how an initial deployment lacks security and how a threat model can be applied to highlight vulnerabilities. You will then learn how controls enforce security requirements, including Zero Trust principles &nbsp;to lock down the cluster. Finally, you will discover CalmHub and the Visualizer, tools that help review and maintain architectures over time.</p><p>Attendees will leave with a practical understanding of how to adopt Architecture as Code to streamline secure API connectivity, making compliance and security part of their deployment process.</p><p>&nbsp;</p><p><strong>Key Takeaways</strong>:</p><ul><li>Understanding the risks and complexity of secure API connectivity</li><li>How CALM enables secure-by-design architectures</li><li>Practical demonstration of CALM CLI and security controls</li><li>Zero Trust and network segmentation in a microservices environment</li><li>Visualizing and managing architectures with CalmHub</li></ul><p><br><strong>Target Audience</strong>:&nbsp;<br>Architects, platform engineers, DevSecOps professionals, and developers working in regulated environments or those seeking to improve security automation in their platforms.</p>",
+      "start": 1744210500,
+      "end": 1744213500
+    },
+    {
+      "title": "From Dashboard Soup to Observability Lasagna: Building Better Layers",
+      "type": "presentation",
+      "speakers": [
+        "Martha Lambert - Incident.io"
+      ],
+      "track": "Connecting Systems: APIs, Protocols, Observability",
+      "abstract": "<p>Let's be honest - observability can suck. Ever feel like you're swimming in dashboard soup? You know the feeling: tons of single-use dashboards, building new ones during every incident only to lose them in the chaos, and spending ages creating visualizations that no one ever looks at again. Even with all the right tools, something still feels off.</p><p>This talk shares the journey of how our team tackled this exact problem while building an on-call tool with high expectations for reliability. You'll hear how we went from feeling lost in our own tooling to becoming confident enough to sleep soundly while on-call. Through building clear system boundaries, a thoughtful approach to dashboards, and running hands-on drills with our team, our observability approach became the key thing that makes our system feel reliable.</p><h4>Key takeaways include:</h4><ul><li>Principles for building dashboards that are useful, long lived, and widely adopted</li><li>How to layer your stack, by connecting your observability tooling to build a debugging flow that puts UX first</li><li>Creating a culture change towards observability, getting your team invested through hands-on drills</li></ul>",
+      "start": 1744206300,
+      "end": 1744209300
+    },
+    {
+      "title": "Scaling API Independence: Mocking, Contract Testing & Observability in Large Microservices Environments",
+      "type": "presentation",
+      "speakers": [
+        "Tom Akehurst - WireMock"
+      ],
+      "track": "Connecting Systems: APIs, Protocols, Observability",
+      "abstract": "<p>Microservices promise faster deployments and team autonomy. In reality, engineers are often blocked waiting for APIs, dealing with broken sandboxes, or wrangling test environments.</p><p>Mocking helps decouple dependencies and teams - but at the scale of 1,000+ internal APIs, maintaining realistic, reliable mocks is a challenge of its own. How do you ensure contract alignment? How do you keep mocks up-to-date without excessive maintenance?</p><p>In this talk, we'll explore new ways to combine mocking, contract testing, and traffic observation to support fast-flowing development and testing.</p>",
+      "start": 1744202100,
+      "end": 1744205100
+    },
+    {
+      "title": "From Confusion to Clarity: Advanced Observability Strategies for Media Workflows at Netflix",
+      "type": "presentation",
+      "speakers": [
+        "Sujana Sooreddy - Netflix",
+        "Naveen Mareddy - Netflix"
+      ],
+      "track": "Connecting Systems: APIs, Protocols, Observability",
+      "abstract": "<p dir=\"ltr\"><span>Managing media workflows at the Netflix scale is both thrilling and daunting. With millions of workflow executions across hundreds of types and over 500 million CPU hours consumed quarterly, costs can skyrocket, and encoding issues can disrupt the streaming experience. The challenge is immense: ensuring the timely delivery of high-resolution encodes, avoiding costly codec bugs, supporting last-moment redeliveries, and identifying bottlenecks before they drain compute resources. How do we navigate this complex system without spiraling into budget and delay disasters? This isn't just about fixing bugs faster anymore. This is connected to observability driving real business value. Imagine instantly knowing the true cost of encoding each movie, or precisely tracking redelivery metrics that directly impact revenue.</span></p><p dir=\"ltr\"><span>We confronted these challenges directly and discovered that traditional observability tools, designed primarily for RPC-style services, were inadequate for media workflows. We required observability at scale to support asynchronous media workflows with long-running tasks. By embracing domain-specific events, distributed tracing, and consistent tagging, we achieved a comprehensive view of our users' workloads. We developed a stream-processing pipeline that processes events from various parts of media workflows and collates them into actionable insights. This powers our observability platform, capable of handling billions of events in real-time, enabling rapid insights and on-the-fly aggregations.</span></p><p dir=\"ltr\"><span>In this talk, we’ll cover the following aspects of how we built observability for long-running, distributed, and high-throughput systems, and how you can apply these learnings:</span></p><ul><li dir=\"ltr\"><strong>Near real-time insights</strong><span>: Learn how to process events promptly to meet the monitoring needs of low-latency encoding. Discover techniques to enable users to catch bugs sooner, limiting wasted compute on encodes known to fail.</span></li><li dir=\"ltr\"><strong>Optimal rollup strategies:</strong><span> Explore how to consolidate millions of low-level events into hundreds of business insight events. We'll share techniques like pre-aggregation and event collapsing to minimize storage and efficiently support top queries.</span></li><li dir=\"ltr\"><strong>Opinionated tagging taxonomy:&nbsp;</strong><span>Understand the importance of a defined tagging taxonomy and how it ensures all business metrics are expressed consistently within your observability platform.</span></li><li dir=\"ltr\"><strong>Enabling ROI analysis for feature development:</strong><span> See how to facilitate long-pole analysis, gain insights into compute usage, and understand latency implications for better ROI analysis of your feature development.</span></li></ul><p><span>By the end of this session, attendees will have concrete strategies to implement effective observability, transforming operations from reactive firefighting to proactive decision-making. Get ready to move from panic to clear, actionable insights, bringing clarity and control to your own large-scale systems!</span></p>",
+      "start": 1744195500,
+      "end": 1744198500
+    },
+    {
+      "title": "Changing Power Dynamics: What Senior Engineers Can Learn From Junior Engineers",
+      "type": "presentation",
+      "speakers": [
+        "Beth Anderson - BBC"
+      ],
+      "track": "The Path to Senior Engineering Leadership",
+      "abstract": "<p>In many engineering teams, senior engineers make the decisions and are responsible for mentoring and teaching junior team members. This rigid hierarchical dynamic can stifle innovation, discourage fresh perspectives, and create barriers to collaboration. How can we change this? This talk explores what issues can arise from a high power distance, how senior engineers can actively learn from their junior counterparts, and how to create an environment of mutual growth, psychological safety, and continuous learning.</p><p>We’ll discuss strategies for reducing hierarchical barriers, embracing reverse mentorship, and the unique insights that newer engineers bring to the table. By adopting a mindset of curiosity and openness, senior engineers can not only strengthen their own technical skills but also cultivate a more inclusive and empowering engineering culture.</p><h3>Key takeaways:</h3><ul><li>Rigid hierarchies can stifle fresh perspectives, limit collaboration, and discourage innovation. At worst, a high power distance can actually be harmful.</li><li>Junior engineers bring unique insights, fresh problem-solving approaches, and knowledge of emerging technologies that senior engineers can benefit from. Senior engineers should embrace mentorship from their junior counterparts which can strengthen both their technical and leadership skills.</li><li>Strategies to flatten power dynamics and create an environment where all team members feel safe to contribute fosters mutual learning and plants the seeds of a more inclusive culture.<br>&nbsp;</li></ul>",
+      "start": 1744029300,
+      "end": 1744032300
+    },
+    {
+      "title": "The Principal Engineer’s Path: Skills, Strategies, and Lessons Learned",
+      "type": "presentation",
+      "speakers": [
+        "Sophie Weston - ClearBank"
+      ],
+      "track": "The Path to Senior Engineering Leadership",
+      "abstract": "<p>In many organizations, the role of Principal Engineer is considered the highest level of the ‘individual contributor’ career path. But careers aren’t like ladders—short, straight, and evenly spaced. Instead, they’re long, winding, and often challenging journeys.</p><p>Principal Engineers provide engineering leadership, and that isn’t just about deep technical expertise. It also demands broader and hard-to-master skills—like influence, communication, and strategic thinking.</p><p>With 30 years in tech, Sophie will reflect on her career and share key insights on what helped her navigate the path from Junior Developer to Principal Engineer. This talk will explore the skills, strategies, and support that can help you shape and sustain your own career growth—whether you're aiming for Principal Engineer or another leadership role.</p><h3>Key takeaways:</h3><ul><li>Your career is a path, not a ladder—the journey matters as much as the destination, if not more.</li><li>A growth mindset and intrinsic motivation are key—you need to grow for yourself, not just to reach a goal.</li><li>Organizations and managers should provide growth opportunities, but it’s up to you to seize them.<br>&nbsp;</li></ul>",
+      "start": 1744018500,
+      "end": 1744021500
+    },
+    {
+      "title": "How to Always Get Invited to Big Strategic Conversations",
+      "type": "presentation",
+      "speakers": [
+        "Mark Allen - Isometric"
+      ],
+      "track": "The Path to Senior Engineering Leadership",
+      "abstract": "<p>Ever heard “you’re a great engineer/manager, but to get to the next level, you need to focus on the big picture and your business impact”? Early on in our careers, we focus on technical depth and excellence. Yet for most of us, our career stalls around limited opportunities to demonstrate strategic thinking and business impact, not a lack of technical depth.</p><p>This talk will focus on practical strategies and examples for getting invited to the big conversations where strategic decisions are made and projects are assigned. You’ll learn how to be the default choice across the company to represent engineering on specific topics, how to demonstrate you’re capable of taking the next step in your career when it isn’t technical skill holding you back and how to share these skills with others to build a strong product-focused company.</p><h3><strong>Key takeaways:</strong></h3><ul><li>How to identify topics of high strategic importance your peers and team aren’t aware of.</li><li>How to become recognised as a topic expert within the business on non-technical and partially technical things.</li><li>How to make sure when you do get in the room, you’re invited back a second time. And then are chosen to lead the projects and teams you really want to lead.<br>&nbsp;</li></ul>",
+      "start": 1744022700,
+      "end": 1744025700
+    },
+    {
+      "title": "Scaling the BBC Design System: Tooling, Community, Governance and Gardening",
+      "type": "presentation",
+      "speakers": [
+        "Sophie Beaumont - BBC"
+      ],
+      "track": "Emerging Trends in the Frontend and Mobile",
+      "abstract": "<p>Do you have experience managing or contributing to a Design System that has to support multiple teams, disciplines’ priorities and competing product requirements? Wondering how to meet the long-term goals of the system without getting in the way of your stakeholders’ needs?</p><p>The BBC Web Design System serves 10 distinct brands, and 25 actively contributing agile software engineering teams who are continuously building, maintaining and evolving over 150 components to solve a varied breadth of audience-facing solutions. As a founder of this Design System team, I’ll talk through our approach.</p><p>Operating at such gigantic scale, technical decisions are the foundation of a successful Design System, but for long-lived maintainability those initial technical decisions must be built upon. As we discuss real world, live production BBC examples, you can expect key takeaways to include: how to introduce tooling, build strong community collaboration, and implement governance and documentation for the benefit of your system and your users. With a little bit of gardening, you too can mitigate Design System scaling challenges.</p>",
+      "start": 1744195500,
+      "end": 1744198500
+    },
+    {
+      "title": "Speed at Scale: Optimizing the Largest CX Platform Out There",
+      "type": "presentation",
+      "speakers": [
+        "Matheus Albuquerque - Medallia"
+      ],
+      "track": "Emerging Trends in the Frontend and Mobile",
+      "abstract": "<p>In a world with a wide variety of network connections, any user can have a slow experience, and apps that delight users on fast connections can barely be usable on slow ones.</p><p>In this session, I'll share our journey of gradually adapting how we deliver pages to better cater to our users' constraints on an enterprise-scale platform with millions of sessions per month—where simply rewriting everything from scratch is not an option.</p><p>With an eye on maintenance and scalability, we'll discuss:</p><ul><li>How to leverage static analysis and related tooling to detect patterns and conduct large codebase migrations.</li><li>Different polyfill strategies to deliver the same experience in legacy browsers.</li><li>How to use popular techniques like code splitting and virtualized rendering to optimize the User Experience.</li><li>Results of using synthetic tests and Real User Monitoring (RUM) tooling to understand how visitors experience your application.</li></ul>",
+      "start": 1744206300,
+      "end": 1744209300
+    },
+    {
+      "title": "The Ideal Micro-Frontends Platform",
+      "type": "presentation",
+      "speakers": [
+        "Luca Mezzalira - AWS"
+      ],
+      "track": "Emerging Trends in the Frontend and Mobile",
+      "abstract": "<p>Micro-frontends can help organizations scale frontend development, but without the right foundations, they often lead to unnecessary complexity and performance issues. How can you implement them effectively while avoiding common pitfalls?</p><p>Having worked with hundreds of teams worldwide on micro-frontend architectures, I’ve seen what works—and what doesn’t—across different industries. In this session, I’ll share real-world insights and proven strategies to help you build successful, maintainable, and scalable frontend distributed systems.</p><p>You’ll learn:</p><ul><li>How to decide if micro-frontends are right for your organization</li><li>The key architectural principles that drive successful implementations</li><li>Common mistakes companies make and how to avoid them</li></ul><p>Whether you’re considering micro-frontends or looking to refine your approach, this talk will provide actionable guidance backed by real-world experience.</p>",
+      "start": 1744210500,
+      "end": 1744213500
+    },
+    {
+      "title": "Bringing DevOps Principles to Controls and Audit",
+      "type": "presentation",
+      "speakers": [
+        "Ian Miell - Container Solutions"
+      ],
+      "track": "The Tech of FinTech",
+      "abstract": "<p>In 2025, many organizations still manage critical compliance controls through manual checks, spreadsheets, Word documents, and Confluence pages—approaches that are error-prone, inefficient, and increasingly outdated. In 2023, frustrated by these challenges, a group of Cloud Native engineers decided to address this gap head-on by creating an open-source solution designed from the ground up to automate Governance, Risk, and Compliance (GRC).</p><p>This initiative aligned with broader movements across the industry, including NIST's Open Security Controls Assessment Language (OSCAL) and the European Union's Digital Operational Resilience Act (DORA), underscoring a global shift toward standardized, automated compliance frameworks.</p><p>This session shares our journey into Continuous Compliance: the motivations behind the project, key lessons learned from our mistakes, and insights from ongoing development and community advocacy. Attendees will gain practical guidance on leveraging Continuous Compliance principles to reduce risk, streamline governance processes, and move their organizations beyond manual compliance into automated, real-time assurance.</p>",
+      "start": 1744202100,
+      "end": 1744205100
+    },
+    {
+      "title": "Building the Next Generation of Financial Infrastructure",
+      "type": "presentation",
+      "speakers": [
+        "Miriam Fahim - LSEG (London Stock Exchange Group)"
+      ],
+      "track": "The Tech of FinTech",
+      "abstract": "<p>Details coming soon.</p>",
+      "start": 1744206300,
+      "end": 1744209300
+    },
+    {
+      "title": "How to Build a Database Without a Server",
+      "type": "presentation",
+      "speakers": [
+        "Alex Seaton - Man Group - ArcticDB"
+      ],
+      "track": "The Tech of FinTech",
+      "abstract": "<p>Modern data analytics workflows rely on scaling out to huge numbers of users and compute nodes. Managing database installations to handle this scale can be unsustainably complex and expensive. Is it instead possible to get rid of all this complexity and build a database with just a client-side library and object storage?</p><p>At Man Group we have evolved over time from managing one of the largest MongoDB installations in Europe to a serverless model where users interact directly with object storage using ArcticDB, our own database engine. What we've learnt from this should be interesting to anyone interested in distributed computing, not just database development.</p><p>We will focus on topics such as:</p><ul><li>Our choices around ACID and our core data structures</li><li>How to manage global state with lock-free techniques such as CRDTs</li><li>How we manage to work with relatively high latency commodity object storage</li><li>How object storage has evolved over time, and how advanced it is becoming</li></ul>",
+      "start": 1744191300,
+      "end": 1744194300
+    },
+    {
+      "title": "Extreme DevOps Automation",
+      "type": "presentation",
+      "speakers": [
+        "Sérgio Amorim - Revolut"
+      ],
+      "track": "The Tech of FinTech",
+      "abstract": "<p>Revolut's rapid growth relies on a powerful microservices architecture, but this presents a significant scaling challenge. Thousands of engineers and hundreds of product teams, configuring the underlying tooling and infrastructure for each service – from git workspaces and CI/CD pipelines to Kubernetes deployments and monitoring dashboards – can be a huge waste. How does Revolut ensure that teams are focus on innovation? This talk dives into how Revolut tackles this challenge head-on. We'll explore the extreme automation strategies employed by a lean, 15-person DevOps platform team to support 1300 engineers and manage a staggering 6500 deployments, enabling Revolut to deliver a truly \"Wow\" experience and keeping Revolut at the forefront of fintech innovation.</p>",
+      "start": 1744210500,
+      "end": 1744213500
+    },
+    {
+      "title": "Latency: The Race to Zero...Are We There Yet?",
+      "type": "presentation",
+      "speakers": [
+        "Amir Langer - Adaptive Financial Consulting"
+      ],
+      "track": "The Tech of FinTech",
+      "abstract": "<p>Low and predictable latency have been an edge in financial trading. Aeron has been pushing the limit on what is possible for IPC, on-premise, and in the cloud messaging. Can we do better? Reaching back into computer science history, techniques like Virtual Synchrony can be used to, not only reduce latency, but also provide high-availability and avoid the complexity of distributed concurrency. In this talk we will explore an approach for system composition that some financial organizations use to give an edge when building mission critical systems.</p>",
+      "start": 1744195500,
+      "end": 1744198500
+    },
+    {
+      "title": "Questioning Convention: C# as a Shortcut to Startup Velocity",
+      "type": "presentation",
+      "speakers": [
+        "Sam Cox - Tracebit"
+      ],
+      "track": "Memory Safe Native Languages and WASM",
+      "abstract": "<p>Are you considering founding a startup? What stack would you use? Would you take a bet on a programming language you've never used professionally before? When building a company from scratch, these aren’t just theoretical questions – they’re make-or-break decisions with real consequences.</p><p>In a situation where conventional wisdom might point to Golang, TypeScript or Python; Tracebit took a different - and potentially surprising - path by building in C#.</p><p>Sam, the CTO &amp; Co-founder of Tracebit, will explore the rationale behind this decision and why it’s been pivotal in enabling a small team to punch above their weight to win discerning enterprise customers in a competitive cybersecurity market. He’ll tell the zero-to-one story of solo-engineering an MVP, landing our first enterprise customer, and growing a high-performing team through practical, in-the-trenches examples of how C# allows you to do more with less while scale increases and runway decreases.</p><p>Whether you're launching a new venture or an engineering leader weighing technical tradeoffs, this session offers actionable insights for making technology decisions that serve both immediate needs and long-term vision – and how questioning the consensus about programming languages might be the strategic advantage you've been overlooking.</p>",
+      "start": 1744104900,
+      "end": 1744107900
+    },
+    {
+      "title": "Expanding Swift from Apps to Services",
+      "type": "presentation",
+      "speakers": [
+        "Cory Benfield - Apple"
+      ],
+      "track": "Memory Safe Native Languages and WASM",
+      "abstract": "<p>The Swift programming language is a popular choice for applications, but many engineers are less familiar with Swift’s capabilities for writing services. This session will explore why Swift is a great fit for services development, from memory safety to interoperability with other languages. Finally, we’ll discuss some of the principles we use when writing services in Swift at Apple.</p>",
+      "start": 1744109100,
+      "end": 1744112100
+    },
+    {
+      "title": "WASM in the Enterprise: Secure, Portable, and Ready for Business",
+      "type": "presentation",
+      "speakers": [
+        "Andrea Peruffo - Red Hat"
+      ],
+      "track": "Memory Safe Native Languages and WASM",
+      "abstract": "<p>WebAssembly (WASM) is emerging as a powerful tool beyond its browser origins, enabling safer, more flexible, and more efficient execution across a wide range of enterprise applications.</p><p>In this session, we’ll take a hands-on look at real-world use cases, including:</p><ul><li>When and why you might need WASM to bootstrap an ecosystem purely on the JVM -- JRuby</li><li>How to make slow-starting interpreters practical for fast UDFs in databases by reducing startup overhead -- TrinoDB</li><li>Running WASM sandboxes on the hot path while minimizing serialization overhead through lazy access to host memory -- Debezium</li></ul><p>We’ll explore the challenges we faced integrating WASM into existing platforms, how we overcame them, and what this means for Java and modern enterprise architectures.</p><p>Attendees will leave with a clearer understanding of WASM's growing role in the enterprise world and a set of practical techniques to overcome initial hiccups and doubts and start using the technology in their projects.</p>",
+      "start": 1744115700,
+      "end": 1744118700
+    },
+    {
+      "title": "How WebAssembly Components Enable Safe and Portable Software Extensions",
+      "type": "presentation",
+      "speakers": [
+        "Alex Radovici - Wyliodrin"
+      ],
+      "track": "Memory Safe Native Languages and WASM",
+      "abstract": "<p>Application extensions are an essential part of any software ecosystem. While Rust is a great language, its lack of a standard ABI means that the whole source code has to be available to the compiler. This makes writing shared libraries and software extensions in Rust almost impossible, unless they expose items through the Foreign Function Interface (FFI) or, in other words, the C ABI. Using FFI renders Rust's type and memory model useless. This talk will explore the ways in which WebAssembly Components can be used to build software extension in Rust avoiding the FFI and exposing rich data types and provide a safe memory mode. It will provide insights into several ways in which widely used Rust projects, such as Zed and Zellij have implemented extensions.</p>",
+      "start": 1744119900,
+      "end": 1744122900
+    },
+    {
+      "title": "WASM Components are a FaaS' Best Friend",
+      "type": "presentation",
+      "speakers": [
+        "Laurent Doguin - Couchbase"
+      ],
+      "track": "Memory Safe Native Languages and WASM",
+      "abstract": "<p>Why would you build your own Function as a Service platform and what does a FaaS architecture look like? Building something that can scale to zero, work with your existing systems, stay secure, and handle different workloads isn’t easy. You need a runtime that’s flexible, supports multiple languages, and provides good isolation.</p><p>When the industry first tackled this, containers seemed like the obvious answer. Maybe containers were the reason why developers started working on FaaS in the first place. But what if there was a better tool for the job? Enter WebAssembly.</p><p>In this talk, we’ll take a look at some challenges of building FaaS platforms, the typical existing architectural, and why more teams—like those at Cloudflare, Fastly, and even American Express—are betting on WebAssembly.</p><p>We'll wrap things up with a practical example using CNCF's wasmCloud and Couchbase, and show what this new approach can look like in the real world.</p>",
+      "start": 1744128300,
+      "end": 1744131300
+    },
+    {
+      "title": "Connecting the Dots: Architectures (Limited Space - Registration Required)",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Architectures You've Always Wondered About",
+      "abstract": null,
+      "start": 1744029300,
+      "end": 1744032300
+    },
+    {
+      "title": "Unconference: The Path to Senior Engineering Leadership",
+      "type": "presentation",
+      "speakers": [],
+      "track": "The Path to Senior Engineering Leadership",
+      "abstract": null,
+      "start": 1744033500,
+      "end": 1744036500
+    },
+    {
+      "title": "Unconference: Engineering Productivity and Developer Experience",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Engineering Productivity and Developer Experience",
+      "abstract": null,
+      "start": 1744041900,
+      "end": 1744044900
+    },
+    {
+      "title": "Unconference: Health Tech",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Health Tech",
+      "abstract": null,
+      "start": 1744022700,
+      "end": 1744025700
+    },
+    {
+      "title": "Unconference: Performance and Sustainability in Practice",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Performance and Sustainability in Practice: How to Make Software Greener",
+      "abstract": null,
+      "start": 1744037700,
+      "end": 1744040700
+    },
+    {
+      "title": "Unconference: Multi-Cloud and Hybrid Cloud Architectures",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Multi-Cloud and Hybrid Cloud Architectures",
+      "abstract": null,
+      "start": 1744115700,
+      "end": 1744118700
+    },
+    {
+      "title": "Connecting the Dots: Culture & Teams (Limited Space - Registration Required)",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Building a Culture that Works",
+      "abstract": null,
+      "start": 1744119900,
+      "end": 1744122900
+    },
+    {
+      "title": "Unconference: Memory Safe Native Languages and WASM",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Memory Safe Native Languages and WASM",
+      "abstract": null,
+      "start": 1744124100,
+      "end": 1744127100
+    },
+    {
+      "title": "Unconference: Resilient Engineering Practices for Security Against Modern Threats",
+      "type": "presentation",
+      "speakers": [],
+      "track": "Resilient Engineering Practices for Security Against Modern Threats",
+      "abstract": null,
+      "start": 1744128300,
+      "end": 1744131300
+    },
+    {
+      "title": "Beyond Code: Building a Personal Brand To Boost Your Career",
+      "type": "presentation",
+      "speakers": [
+        "Roland Meertens - Wayve",
+        "Steef-Jan Wiggers - Team Rockstars IT"
+      ],
+      "track": "Sponsored Solution Track II",
+      "abstract": "<p>In an increasingly competitive field, software expertise alone may not be enough to stand out and drive your career forward. Platforms like GitHub, LinkedIn, and Twitter, along with active engagement in communities, open up unique pathways for senior developers and technical leaders to elevate their professional profiles, build influence, and expand their career options beyond the codebase. In this presentation, Roland Meertens and Steef-Jan Wiggers will reflect on their own career journeys, sharing what they tried to increase their visibility and opportunities in the job market—and, most importantly, what worked.</p><p>The session will explore actionable strategies for harnessing social media to establish a technical presence, and effectively contributing to open-source projects to enhance both personal growth and industry credibility. You’ll discover tips for writing blog articles that share insights and establish thought leadership. We’ll also cover the role of helping others, such as mentoring or contributing to Q&amp;A sites, to expand your network and sharpen your own skills.</p><p>Finally, we'll dive into practical ways to contribute to industry-leading communities like QCon and InfoQ—through news pieces, in-depth articles, or even podcasts—that allow you to give back to the developer ecosystem while raising your own professional profile. This session will equip you with a range of tools and techniques to grow your career by expanding your influence beyond code, connecting with others in the industry, and building a legacy that can be your ticket to future opportunities.</p>",
+      "start": 1744115700,
+      "end": 1744118700
+    },
+    {
+      "title": "Developer Experience’s New Frontier: Agentic Experience",
+      "type": "presentation",
+      "speakers": [
+        "Nolan Di Mare Sullivan - Speakeasy"
+      ],
+      "track": "Sponsored Solution Track III",
+      "abstract": "<p>Just as companies were beginning to come to terms with why developer experience is important to their business, a new frontier has appeared: Agentic Experience (AX). Join Nolan, Head of Relations at Speakeasy to explore how in 2025, your organization can start catering to the wave of AI agents that are programmatically consuming your business’s services. Your future success depends on being AI-friendly. This session will lay out the concrete steps you can take today, as well as hypothesize about where this may be going in the longer term.</p>",
+      "start": 1744191300,
+      "end": 1744194300
+    },
+    {
+      "title": "Building a Streaming Agentic AI Pipeline with Redpanda and Snowflake",
+      "type": "presentation",
+      "speakers": [
+        "Paul Wilkinson - Redpanda"
+      ],
+      "track": "Sponsored Solution Track I",
+      "abstract": "<p>In this technical talk for developers, architects and the technically curious, Paul will cover recent developments within Redpanda Connect.</p><p>Firstly, we will highlight new capabilities that enable agentic AI processes to be applied to streaming data. By using tools for external integration, we will show how to build highly specialized and capable AI agents that interact with external systems, providing essential additional context to LLMs.</p><p>In the second part of the talk, we will show how recent developments in Redpanda Connect that can also enable high throughput data ingestion into Snowflake (via Snowpipe Streaming).</p><p>Finally, we will combine all of these techniques together into a single, end-to-end demo.</p>",
+      "start": 1744033500,
+      "end": 1744036500
+    },
+    {
+      "title": "AI Developer Tools Are Focused on the Wrong Problem",
+      "type": "presentation",
+      "speakers": [
+        "Dennis Pilarinos - Unblocked"
+      ],
+      "track": "Sponsored Solution Track I",
+      "abstract": "<p>For all the claims about AI increasing developer productivity, why aren't developers seeing more of an impact?What we've heard from thousands of developers is that writing code is not their main challenge. They're stuck at Step #1 – trying to find the right context about how the codebase works and why.</p><p>Codebases are a compilation of thousands of decisions, discussions, and documents that live across tools like Confluence, Slack, Notion, Jira, Linear, GitHub, and more - accumulated over years if not decades. Whether a developer is onboarding to your team or trying to understand how a piece of legacy code works, they waste hours every day digging for the answers through all these systems.</p><p>Unblocked augments your code with context from the tools in your stack, giving your development team a platform for asking questions, and for discovering historical context about their code.</p><p>The impact here is profound: with Unblocked, developers can answer their own questions without interrupting their peers or having to wait for meetings. What's more, they can find the entirety of the information they need wherever they're working.</p><p>If we want to see actual productivity benefits from AI, we need to use it where we spend the most time. The more we can empower developers with the context they need, the faster we can achieve our goals and the happier we can make our teams.</p><p><img src=\"https://ci3.googleusercontent.com/meips/ADKq_NZwnkhNmB_KMTdked9V-k5HjOCNPtqvyhaOvxnLaK9aww5Ii_ivixnwfV2NmaAE1SonobmtQ6tiwH8jBBPaOonMOLpvpbu1CCAYpkqZHC7EZwnxfN75WmcV9EfPBTkpViTuyvEhb9Nx8nnOFU7bcAH6bYuwUcZr2HksKgKKTUsQD5RR3JdUoOYQTKNxC3QlTrIB2nVe8XkgxLQs4WNlZgLkHVbbHuqZdyDyPlwTdbPbRQ=s0-d-e1-ft#https://getunblocked.mxspruce.com/api/track/v2/fUv1YHtRF1KKEjdvR/gIt92YuQWZrN2bsJmb1RXZnBUZylWYsNmI/gIt92YuE3bm5WaAFGbsVmI/gIuFWZul2ZyFWTgEGbsVkI?sc=false\" alt=\"\" width=\"0\" height=\"0\"></p><p>&nbsp;</p>",
+      "start": 1744041900,
+      "end": 1744044900
+    },
+    {
+      "title": "A Blueprint for Agentic AI Services ",
+      "type": "presentation",
+      "speakers": [
+        "Duncan DeVore - Akka"
+      ],
+      "track": "Sponsored Solution Track I",
+      "abstract": "<p>We’re all excited to build and deliver agentic AI services. But what about running at the exponentially greater scale that agents create? LLMs suffer from poor latency and availability issues. More frequent model training drives more frequent updates to agentic services. Most of all, the LLM cost of running at an agentic scale breaks the bank—fast. So, what can you do?</p><p>In this session, we’ll dig into how engineering and operations can address:</p><ul><li>Making agentic services fail-proof when their LLMs are not</li><li>Managing a two-order-of-magnitude increase in TPS, including a 2M TPS RAG case<br>study</li><li>Navigating cost vs. quality tradeoffs, with LLMs costing up to 100,000x more than a<br>database transaction</li><li>Continuously redeploying agents that require frequent retraining</li></ul><p>After this session, we invite you to attend part 2 of the discussion: “From Concept to Code: Navigating Agentic AI Services\"</p>",
+      "start": 1744029300,
+      "end": 1744032300
+    },
+    {
+      "title": "From Concept to Code: Navigating Agentic AI Services ",
+      "type": "presentation",
+      "speakers": [
+        "Alan Klikic - Akka"
+      ],
+      "track": "Sponsored Solution Track II",
+      "abstract": "<p>Those who embrace agentic AI will reap the rewards. Building on the strategic insights from the first session (“A Blueprint for Agentic AI Services”), this presentation delves into the technical intricacies of harnessing agentic AI.</p><p>Attendees will explore practical code examples that demonstrate how event-sourced architecture is uniquely positioned to address the complexities of agentic AI.</p>",
+      "start": 1744109100,
+      "end": 1744112100
+    },
+    {
+      "title": "Engineering Excellence at ING: Balance Autonomy with Standardization",
+      "type": "presentation",
+      "speakers": [
+        "Daniele Tonella - ING"
+      ],
+      "track": "Sponsored Solution Track II",
+      "abstract": "<p>ING is committed to empowering its engineers to maximize their impact and create more value for customers. To achieve this, ING continuously seeks innovative ways to accelerate development and enhance productivity.</p><p>By making teams smaller and strengthening relationships with product counterparts, ING has fostered numerous successful projects. However, this autonomy has also led to fragmentation, increased architectural complexity, and cost growth, challenging reliability, and productivity.</p><p>To address these issues, some teams autonomously implemented uniform and streamlined pipelines, which quickly saw explosive organic growth across the organization. ING is now scaling its engineering capabilities by standardizing build and deploy pipelines, reducing complexity, and improving the developer experience. This initiative aims to embed conformity, security, and resilience by design, leading to better documentation, architecture decisions, and quality definitions.</p><p>Embedding a feedback control plane within the platform helps minimize the impact of unavoidable failures more effectively than root cause analysis alone. This approach ensures a faster, more reliable path to production. Automating compliance checks and risk controls in the regulated banking industry keeps ING secure while leaving its engineers to do their thing.</p><p>Within ING we create an engineering experience that supports freedom, creativity and productivity for engineers within well-contained guardrails, enabling engineers to excel at creating value and innovating daily. The true power of engineering lies not in the tools themselves but in the impact they make.</p><p>Join Daniele Tonella to learn how ING's engineering efforts are paving the way for future success.</p>",
+      "start": 1744104900,
+      "end": 1744107900
+    },
+    {
+      "title": "AI-Enabled Delivery - ICSAET Cohort Only",
+      "type": "presentation",
+      "speakers": [
+        "Wes Reisz - Equal Experts"
+      ],
+      "track": "Sponsored Solution Track II",
+      "abstract": "<p><strong>Only available to attendees with a “Conference (3 days) + Certification (half day)” ticket.</strong></p><p>At QCon London 2025, the \"AI-Enabled Delivery\" AMA will explore how AI is transforming software development practices. This small group session is specifically for the ICAET program at QCon London this year. The panel features distinguished experts working with AI in the delivery of software.</p>",
+      "start": 1744124100,
+      "end": 1744127100
+    },
+    {
+      "title": "Streaming Really Large Data With Flink and Fluss",
+      "type": "presentation",
+      "speakers": [
+        "Ben Gamble - Ververica"
+      ],
+      "track": "Sponsored Solution Track II",
+      "abstract": "<p>Modern data workloads are pushing the limits of our streaming systems. Row-oriented streaming pipelines often send every event (and every field) over the network, even if consumers only need a fraction of that data. With data volumes skyrocketing in the AI era – where machine learning and real-time analytics consume more data than ever – these inefficiencies become a serious bottleneck. In this talk, we explore a new approach that treats all data as tables, seamlessly integrating streams as continuously updating tables to make streaming more efficient and scalable.</p><p>What you'll learn:<br>Filtering Data at the Source: See how combining Apache Paimon with Apache Arrow (a columnar format) enables predicate pushdown and columnar storage. This allows data to be filtered and pruned at the source, significantly cutting down unnecessary network traffic (often by up to 50%). By avoiding the row-by-row transfer of irrelevant data, we reduce network overhead and boost throughput.</p><p>Unified Batch and Stream Queries: Learn how treating streams as tables lets you run the same queries across static data lakes and live streaming data without special-case code. We’ll discuss how Apache Arrow’s in-memory columnar capabilities, integrated with Apache Paimon’s table format, make it possible to query historical data and real-time events in a unified way. This streaming-lakehouse approach simplifies architecture by using one table-oriented model for both batch and streaming workloads.</p><p>Scalable Pipeline Architecture: Discover strategies for chaining multiple processing jobs (with engines like Apache Flink and even Apache Spark) while maintaining data integrity and low latency. We’ll cover how the open-source FLUSS project serves as a real-time streaming storage layer that works hand-in-hand with Flink. Drawing on real-world use cases – including how Alibaba’s platforms handle massive, continuous data streams – we’ll illustrate how this architecture supports billions of events without compromising performance.<br>This session is designed for data engineers and architects looking to build scalable, cost-effective data pipelines that blend streaming and batch processing. You’ll come away with practical insights into why our data architectures must evolve to support AI-driven demand, and how reimagining streams as tables can simplify your stack while delivering substantial performance gains and cost savings.</p>",
+      "start": 1744119900,
+      "end": 1744122900
+    },
+    {
+      "title": "Zero Trust or Bust. Bring Your Own Cloud To Real-Time Data",
+      "type": "presentation",
+      "speakers": [
+        "Karin  Landers - Ververica"
+      ],
+      "track": "Sponsored Solution Track I",
+      "abstract": "<p>As organizations increasingly look to adopt Bring Your Own Cloud (BYOC) models to deploy scalable, real-time data streaming solutions, security concerns around data governance, access control, and compliance become critical business considerations. This session explores how to integrate Zero Trust principles into real-time streaming projects that ensure end-to-end security, least privilege access, and continuous verification, all while enabling users to leverage their preferred cloud environments.</p><p>Additional details will be provided on the features built directly into Ververica’s Unified Streaming Data Platform BYOC deployment that support an ideal mix of security, flexibility, and efficiency businesses rely on. Learn how to implement Zero Trust architectures for real-time data streaming, ensure secure multi-cloud deployments, and maintain operational efficiency without compromising security.&nbsp;</p>",
+      "start": 1744022700,
+      "end": 1744025700
+    },
+    {
+      "title": "Unlock Continuous Testing with AI Test Agent Workflows",
+      "type": "presentation",
+      "speakers": [
+        "Animesh Mishra - Diffblue"
+      ],
+      "track": "Sponsored Solution Track II",
+      "abstract": "<p><span>This talk will explore how agentic AI is revolutionizing continuous testing workflows, with a practical demonstration of Diffblue Cover's autonomous AI-powered unit testing capabilities. As testing landscapes evolve in 2025, we'll examine how AI agents can intelligently manage entire test suites, prioritize tests based on risk assessment, and maintain regression coverage with minimal human intervention.</span></p>",
+      "start": 1744128300,
+      "end": 1744131300
+    },
+    {
+      "title": "Unconference: AI and ML for Software Engineers",
+      "type": "presentation",
+      "speakers": [],
+      "track": "AI and ML for Software Engineers: Foundational Insights",
+      "abstract": null,
+      "start": 1744109100,
+      "end": 1744112100
+    },
+    {
+      "title": "A Thirteen Billion Year Old Photograph",
+      "type": "keynote",
+      "speakers": [
+        "Dr. Kenneth Harris"
+      ],
+      "abstract": "<p>Over thirteen billion years of cosmic history lie etched in the light that travels across the universe. Join Dr. Kenneth Harris, former rocket scientist and integration engineer to learn about the next generation technology developed for the James Webb Space Telescope (JWST) as humanity's most advanced tool for decoding this ancient story—revealing planets, star systems, and the violent birth and death of celestial bodies in unprecedented detail. But how does it accomplish such a feat?</p><p>In this keynote, we’ll dive into the intersection of cutting-edge hardware and software innovations that power JWST. From its revolutionary segmented mirror and cryogenic cooling systems to the precision algorithms that process terabytes of data into vivid images of the cosmos. Participants will gain insights into how billions of years worth of data translate to breathtaking images that expand for light years, peaking human curiosity and challenging us all to explore beyond our world.</p>",
+      "start": 1744012800,
+      "end": 1744017000
+    },
+    {
+      "title": "The Form of AI",
+      "type": "keynote",
+      "speakers": [
+        "Savannah Kunovsky - IDEO"
+      ],
+      "abstract": "<p>Today’s go-to consumer AI is a chatbot, but that’s just training wheels for the future. The designers, engineers, and futurists at IDEO have been imagining the forms AI will take over the coming years — and asking ourselves the hard question: how do we actually want to interact with AI? This talk will cover our human-centered approach to the next generation of AI and provocations for AI hardware people will actually be excited to use. We'll share our thoughts, from wearable pants you can talk to, to a unique camera that plays back your vibes. We’ll reimagine existing devices - like the “Viewmaster”, along with inventing brand-new devices - like an Olfactory ScentCapture sphere. Join us as we expand our minds, erasing the constraints of today and imagine the form of AI in the future.</p>",
+      "start": 1744099200,
+      "end": 1744103400
+    },
+    {
+      "title": "Making AI Agents Work For You (and Your Team)",
+      "type": "keynote",
+      "speakers": [
+        "Hannah Foxwell"
+      ],
+      "abstract": "<p>Everyone is talking about AI agents, autonomous programmes that can solve problems and work towards their goals independently. You can even have teams of agents working for you. But, is the anthropomorphism of AI a good thing? These are just computer programs after all?</p><p>We don’t know what the future will look like, but we do know that the way we work is changing. When our work changes our teams change, and as our teams change our organisations will change. We’re living through an age of experimentation and discovery, where we need to look at some of our assumptions about “what good looks like” and challenge if they’re still valid.</p><p>Let’s get nerdy about org design and discuss how AI could change how we set ourselves up for success, whatever our mission.</p>",
+      "start": 1744215300,
+      "end": 1744218000
+    },
+    {
+      "title": "Advanced Message Queuing Politics",
+      "type": "keynote",
+      "speakers": [
+        "John O'Hara"
+      ],
+      "abstract": "<p>This is the story of the Advanced Message Queuing protocol as told by its originator. It’s an epic tale of people, strong visions, high passions, good friends and vigorous competitors, with deep lessons for anyone making technology at scale.</p>",
+      "start": 1744185600,
+      "end": 1744189800
+    },
+    {
+      "title": "[SOLD OUT] Become an InfoQ Certified Software Architect in Emerging Technologies (ICSAET)",
+      "type": "training",
+      "speakers": [
+        "Wes Reisz - Equal Experts"
+      ],
+      "abstract": "<h2>Take your software architecture practice to the next level</h2><p dir=\"ltr\">Senior software architects face a critical challenge: while companies are rushing to implement emerging technologies, few have validated expertise in scaling these solutions in the real world. Traditional certifications focus on theory, leaving architects to figure out practical implementation alone.</p><img src=\"https://qconlondon.com/modules/custom/qcon_base/images/icsaet-cert.jpg\" data-align=\"center\" alt=\"ICSAET\" width=\"3391\" height=\"2398\"><p dir=\"ltr\"><em><strong>According to </strong></em><a href=\"https://www.weforum.org/publications/the-future-of-jobs-report-2025/\" target=\"_blank\"><em><strong><u>The Future of Jobs Report 2025</u></strong></em></a><em><strong> from the World Economic Forum, “85% of companies planning to upskill their people and 59% of the global workforce needing training by 2030,</strong></em><strong>”</strong></p><h3>Transform your software architectural practice</h3><p>The ICSAET certification is your opportunity to:</p><ul><li><strong>Demonstrate expertise</strong> in implementing emerging technologies at scale</li><li><strong>Stay ahead of the curve</strong> in a fast-changing dev environment</li><li><strong>Enhance your professional brand</strong> as a senior technical leader</li><li><strong>Build lasting connections</strong> with fellow architectural leaders.</li></ul><h3>Learn from real-world enterprise implementations</h3><p>Built on nearly two decades of working with international software teams, this unique certification delivers practical insights for implementing emerging technologies at scale.</p><p>Join a select cohort of experienced architects for InfoQ's hands-on certification program led by Wesley Reisz, 16-time QCon Chair and veteran architect. Learn from actual implementation scenarios shared at QCon London, including:</p><ul><li>Scaling architectures for massive traffic</li><li>Integrating AI/ML in modern data architectures</li><li>Real trade-offs in enterprise implementations</li><li>Evolution of architectural practices</li></ul><h3>Your 4-day learning journey (April 7-10, 2025)</h3><p><strong>Before the event</strong></p><ul><li>Join a carefully selected cohort of senior architects</li><li>Join a private Slack group for early discussions</li><li>Connect with your peer cohort</li></ul><p><strong>During QCon London Conference (April 7-9)</strong></p><ul><li>Start with an exclusive cohort breakfast</li><li>Learn from active senior software practitioners</li><li>Explore real-world implementations of AI, scalable architectures, and cloud-native systems</li><li>Attend focused lunch sessions with software leaders</li><li>Participate in dedicated cohort discussions</li><li>Network at dedicated conference social events</li><li>Gain actionable insights for your team's roadmap</li></ul><p><strong>At the hands-on certification workshop (April 10)</strong></p><ul><li>Solve real-world architectural challenges</li><li>Collaborate with peers on practical solutions</li><li>Apply conference insights to concrete problems</li></ul><h3>Learn with experienced peers</h3><p>Join a carefully selected cohort of senior architects:</p><ul><li>Connect before the event in our private Slack group</li><li>Start with an exclusive breakfast to meet your peers</li><li>Share challenges during focused lunch sessions</li><li>Build lasting relationships with fellow practitioners.</li></ul><h3>Program requirements</h3><ul><li>Minimum 5 years of senior technical experience</li><li>Full attendance at QCon London (April 7-9)</li><li>Participation in certification workshop (April 10)</li></ul><h3>What's Included</h3><ul><li>Full QCon London conference access</li><li>Hands-on certification workshop</li><li>Private Slack group access</li><li>Exclusive networking sessions</li><li>ICSAET certification upon completion</li></ul><h3>About the Thursday Certification Workshop</h3><p>Cap off your QCon London experience with an interactive Hands-on Certification Workshop designed exclusively for attendees pursuing the ICSAET designation. In this workshop, we’ll distill key insights from the past three days of the conference, surfacing emerging patterns, best practices, and real-world challenges discussed by leading architects and practitioners. Guided by our expert trainer, you’ll engage in breakout sessions where you’ll apply these learnings to practical challenges, refining your skills in real time.&nbsp;</p><p>This session is your opportunity to synthesize knowledge, exchange ideas with peers, and solidify your understanding.</p><h3>What ICSAET is different</h3><p><strong>Practical, real-world focus</strong></p><ul><li>Learn from innovators and early adopters solving today's challenges</li><li>Work with real enterprise implementation scenarios</li><li>Apply insights directly to your work</li></ul><p><strong>Peer learning</strong></p><ul><li>Join a carefully selected cohort of senior architects</li><li>Start building relationships before QCon in our private Slack group</li><li>Share approaches across industries and scales</li><li>Build lasting professional relationships</li></ul><p><strong>Professional growth</strong></p><ul><li>Earn a recognized credential in emerging technologies</li><li>Join a community of architectural leaders</li><li>Join an ongoing community of practice for future challenges.</li></ul><h3>Prerequisites</h3><ul><li>Bring your laptop, a notepad, and a pen.</li><li>Your cohort will connect with the trainer via Slack a few weeks before the event.</li><li>There are no mandatory materials to review before the event. Any pre-event materials shared on Slack will be optional.</li><li>You are expected to attend all three days of the conference, including keynotes and presentations. While organizers may offer recommendations to enhance your experience, you are responsible for choosing which sessions to attend.</li><li>Your cohort will meet on Monday morning, 30 minutes before the keynote begins.</li><li>You will have a private lunch meeting with your cohort on Wednesday.</li><li>Throughout the event, you will have opportunities to meet and interact with your trainer and cohort. These interactions are optional but strongly encouraged.</li><li>You are highly encouraged to attend at least one unconference session.</li></ul><p><em>Cohort size is <u>strictly limited</u> to ensure quality interaction and peer learning.&nbsp;</em></p><p dir=\"ltr\"><span>To join the ICSAET certification program, select the </span><a class=\"c-link c-link--focus-visible\" href=\"https://qconlondon.com/registration/event/apr2025\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>Conference (3 days) + Certification (half day)</strong></a><strong>, or upgrade your existing 3-day ticket on your </strong><a class=\"c-link c-link--focus-visible\" href=\"https://qconlondon.com/my-account\" target=\"_blank\" rel=\"noopener noreferrer\"><strong>My Account page</strong></a><strong>.”</strong></p>",
+      "start": 1744272000,
+      "end": 1744284600
+    }
+  ]
+}
