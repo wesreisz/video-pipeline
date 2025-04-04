@@ -1,5 +1,6 @@
 import csv
 import boto3
+from datetime import datetime
 from typing import List, Optional
 from loguru import logger
 from utils.secrets import get_secrets_service
@@ -13,8 +14,16 @@ class AuthUtil:
         self._authorized_emails: List[str] = []
         self._secrets_service = get_secrets_service()
         self._s3_client = boto3.client('s3')
+        self._last_refresh: Optional[datetime] = None
+        self._cache_ttl: int = 300  # 5 minutes in seconds
         logger.info("AuthUtil initialized, loading access list...")
         self._load_access_list()
+    
+    def _is_cache_stale(self) -> bool:
+        """Check if the cache is stale (older than 5 minutes)."""
+        if not self._last_refresh:
+            return True
+        return (datetime.now() - self._last_refresh).total_seconds() > self._cache_ttl
     
     def _load_access_list(self) -> None:
         """Load the access list from S3."""
@@ -41,6 +50,9 @@ class AuthUtil:
             reader = csv.reader(content)
             self._authorized_emails = [row[0].strip().lower() for row in reader if row]
             
+            # Update last refresh timestamp
+            self._last_refresh = datetime.now()
+            
             logger.info(f"Loaded {len(self._authorized_emails)} authorized emails")
             logger.debug(f"Current authorized emails: {self._authorized_emails}")
             
@@ -59,6 +71,11 @@ class AuthUtil:
         Returns:
             bool: True if email is authorized, False otherwise
         """
+        # Check if cache is stale and refresh if needed
+        if self._is_cache_stale():
+            logger.info("Cache is stale, refreshing access list...")
+            self._load_access_list()
+            
         email = email.lower()
         is_auth = email in self._authorized_emails
         logger.info(f"Authorization check for {email}: {'authorized' if is_auth else 'unauthorized'}")
