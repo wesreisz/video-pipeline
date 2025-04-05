@@ -3,6 +3,7 @@ openai_api_key   = "your-openai-api-key-here"
 pinecone_api_key = "your-pinecone-api-key-here"
 
 # Optional variables with defaults
-aws_region    = "us-east-1"
-environment   = "dev"
-project_name  = "video-pipeline" 
+aws_region         = "us-east-1"
+environment        = "dev"
+project_name       = "video-pipeline"
+certificate_domain = "your-domain.com"  # Replace with your actual domain 

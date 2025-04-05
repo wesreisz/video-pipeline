@@ -143,4 +143,9 @@ output "function_name" {
 output "api_endpoint" {
   description = "API Gateway endpoint URL"
   value       = "${aws_api_gateway_stage.question_api.invoke_url}/query"
+}
+
+output "api_id" {
+  description = "ID of the API Gateway REST API"
+  value       = aws_api_gateway_rest_api.question_api.id
 } 

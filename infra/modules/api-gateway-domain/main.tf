@@ -8,42 +8,34 @@ terraform {
   }
 }
 
-# Create ACM Certificate
-resource "aws_acm_certificate" "api_cert" {
-  provider          = aws.us-east-1  # ACM certificates for API Gateway must be in us-east-1
+# Use the certificate module to manage the certificate
+module "certificate" {
+  source = "../certificate"
+  
   domain_name       = var.domain_name
-  validation_method = "DNS"
-
-  lifecycle {
-    create_before_destroy = true
-  }
-
+  create_if_missing = true  # Will create new certificate if none exists
+  
   tags = {
-    Environment = var.environment
+    Environment = "dev"
+    Project     = "video-pipeline"
+  }
+
+  providers = {
+    aws = aws.us-east-1  # ACM certificates for API Gateway must be in us-east-1
   }
 }
 
-# Output the DNS validation records that need to be created in GoDaddy
-output "certificate_validation_records" {
-  value = {
-    for dvo in aws_acm_certificate.api_cert.domain_validation_options : dvo.domain_name => {
-      name   = dvo.resource_record_name
-      record = dvo.resource_record_value
-      type   = dvo.resource_record_type
-    }
-  }
-}
-
-# Create API Gateway domain name (REST API)
+# Create API Gateway domain name
 resource "aws_api_gateway_domain_name" "api" {
-  provider          = aws.us-east-1
-  domain_name       = var.domain_name
-  certificate_arn   = aws_acm_certificate.api_cert.arn
-  security_policy   = "TLS_1_2"
-
+  provider                = aws.us-east-1
+  domain_name            = var.domain_name
+  regional_certificate_arn = module.certificate.certificate_arn
+  
   endpoint_configuration {
-    types = ["EDGE"]
+    types = ["REGIONAL"]
   }
+
+  depends_on = [module.certificate]
 }
 
 # Create base path mapping

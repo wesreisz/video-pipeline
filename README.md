@@ -155,6 +155,29 @@ video-pipeline/
    terraform apply tfplan
    ```
 
+### DNS Configuration
+
+The API Gateway custom domain requires proper DNS configuration. After deployment:
+
+1. Get the API Gateway domain name:
+   ```bash
+   cd infra/environments/dev
+   terraform output api_gateway_domain_name
+   ```
+
+2. Configure your DNS provider:
+   - Create a CNAME record
+   - Name/Host: Your subdomain (e.g., `api-dev`)
+   - Value/Target: The API Gateway domain name from step 1
+     (looks like: `d-XXXXXXXXXXXX.execute-api.us-east-1.amazonaws.com`)
+   - TTL: 300 seconds (or as recommended by your provider)
+
+**Note:** There are two different API Gateway endpoints:
+1. The direct API endpoint (e.g., `XXXXXXXXXXXX.execute-api.us-east-1.amazonaws.com`)
+2. The custom domain endpoint (e.g., `d-XXXXXXXXXXXX.execute-api.us-east-1.amazonaws.com`)
+
+Always use the custom domain endpoint (starts with `d-`) for DNS configuration. The direct API endpoint is for testing and should not be used for DNS configuration.
+
 ## Testing
 
 ### Running Tests

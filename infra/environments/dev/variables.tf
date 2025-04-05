@@ -33,4 +33,10 @@ variable "video_pipeline_api_key" {
   type        = string
   sensitive   = true
   default     = null
+}
+
+variable "certificate_domain" {
+  description = "Domain name for the AWS Certificate"
+  type        = string
+  default     = "your-domain.com"  # Replace with your actual domain
 } 

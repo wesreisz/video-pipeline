@@ -7,6 +7,6 @@ module "api_gateway_domain" {
 
   domain_name    = "icaet-dev.wesleyreisz.com"
   environment    = "dev"
-  api_gateway_id = "4fyervgchc"
+  api_gateway_id = module.question_module.api_id
   stage_name     = "dev"
 } 

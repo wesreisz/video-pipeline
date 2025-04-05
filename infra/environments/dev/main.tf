@@ -518,6 +518,18 @@ module "audio_segments_queue" {
   lambda_role_name = module.chunking_lambda.role_name
 }
 
+# Certificate Protection
+module "certificate_protection" {
+  source = "../../modules/certificate"
+
+  domain_name = var.certificate_domain
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "terraform"
+  }
+}
+
 # Outputs
 output "media_bucket_name" {
   value = module.media_bucket.bucket_id
