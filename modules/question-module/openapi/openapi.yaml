@@ -1,0 +1,301 @@
+openapi: 3.0.3
+info:
+  title: Video Pipeline Question API
+  description: |
+    API for querying transcribed video content using semantic search. This service processes questions 
+    about video transcripts and returns relevant content matches using OpenAI embeddings and Pinecone vector search.
+    
+    The API is designed to be used by ChatGPT or other AI assistants to provide contextual answers about 
+    video content from QCon talks and technical presentations.
+  version: 1.0.0
+  contact:
+    name: Video Pipeline Team
+    email: support@example.com
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: https://api-dev.your-domain.com
+    description: Development environment
+  - url: https://api-prod.your-domain.com
+    description: Production environment
+
+tags:
+  - name: query
+    description: Video content search and retrieval operations
+
+paths:
+  /query:
+    post:
+      tags:
+        - query
+      summary: Query video transcripts
+      description: |
+        Submit a question to search through transcribed video content. The service uses semantic search 
+        to find relevant content segments and returns metadata about matching video segments.
+        
+        **Authorization**: Requires a valid API key in the `x-api-key` header.
+        **Email Authorization**: Only authorized email addresses can make requests.
+      operationId: queryTranscripts
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionRequest'
+            examples:
+              basic_question:
+                summary: Basic technical question
+                value:
+                  question: "What are the best practices for microservices architecture?"
+                  email: "user@example.com"
+              speaker_question:
+                summary: Question about a specific speaker
+                value:
+                  question: "What did Martin Fowler say about event-driven architecture?"
+                  email: "developer@company.com"
+      responses:
+        '200':
+          description: Successful query response with matching content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryResponse'
+              examples:
+                successful_response:
+                  summary: Successful search results
+                  value:
+                    pinecone_matches:
+                      - speaker: ["Martin Fowler"]
+                        start_time: "15.5"
+                        end_time: "45.2"
+                        title: "Microservices: Decomposing Applications"
+                        track: "Architecture"
+                        day: "Tuesday"
+                        text: "Event-driven architecture is crucial for microservices..."
+                        original_file: "fowler-microservices.mp3"
+                        segment_id: "seg_001"
+                      - speaker: ["Sam Newman"]
+                        start_time: "120.8"
+                        end_time: "180.4"
+                        title: "Building Microservices"
+                        track: "Architecture"
+                        day: "Wednesday"
+                        text: "When designing microservices, consider domain boundaries..."
+                        original_file: "newman-building.mp4"
+                        segment_id: "seg_045"
+        '400':
+          description: Bad request - invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_fields:
+                  summary: Missing required fields
+                  value:
+                    error: "Missing required fields: question and email"
+                invalid_email:
+                  summary: Invalid email format
+                  value:
+                    error: "Invalid email format"
+                empty_question:
+                  summary: Empty question
+                  value:
+                    error: "Question must be a non-empty string about the transcripts"
+        '401':
+          description: Unauthorized - invalid or missing API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missing_api_key:
+                  summary: Missing API key
+                  value:
+                    error: "Invalid or missing API key"
+                invalid_api_key:
+                  summary: Invalid API key
+                  value:
+                    error: "Invalid or missing API key"
+                unauthorized_email:
+                  summary: Email not authorized
+                  value:
+                    error: "Email not authorized: unauthorized@example.com"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                processing_error:
+                  summary: Error processing request
+                  value:
+                    error: "Error processing request"
+                server_error:
+                  summary: Internal server error
+                  value:
+                    error: "Internal server error"
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: |
+        API key for authentication. Contact the API administrators to obtain a valid key.
+        Format: `icaet-ak-{32-character-string}`
+
+  schemas:
+    QuestionRequest:
+      type: object
+      required:
+        - question
+        - email
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: |
+            The question to search for in the video transcripts. Should be a clear, 
+            specific question about technical content, speakers, or topics covered in the videos.
+          example: "What are the key principles of microservices architecture?"
+        email:
+          type: string
+          format: email
+          description: |
+            Email address of the user making the request. Must be in the authorized users list.
+          example: "user@example.com"
+      additionalProperties: false
+
+    QueryResponse:
+      type: object
+      required:
+        - pinecone_matches
+      properties:
+        pinecone_matches:
+          type: array
+          description: Array of matching content segments from video transcripts
+          maxItems: 5
+          items:
+            $ref: '#/components/schemas/ContentMatch'
+
+    ContentMatch:
+      type: object
+      description: A matching content segment from a video transcript
+      properties:
+        speaker:
+          type: array
+          items:
+            type: string
+          description: List of speaker names for this content segment
+          example: ["Martin Fowler", "Rebecca Parsons"]
+        start_time:
+          type: string
+          pattern: '^\d+(\.\d+)?$'
+          description: Start time of the segment in seconds
+          example: "15.5"
+        end_time:
+          type: string
+          pattern: '^\d+(\.\d+)?$'
+          description: End time of the segment in seconds
+          example: "45.2"
+        title:
+          type: string
+          description: Title of the talk or presentation
+          example: "Microservices: Decomposing Applications for Deployability and Scalability"
+        track:
+          type: string
+          description: Conference track or category
+          example: "Architecture & Design"
+        day:
+          type: string
+          description: Day of the conference
+          example: "Tuesday"
+        text:
+          type: string
+          description: |
+            The transcribed text content for this segment. May be empty if metadata 
+            size constraints required removing the text field.
+          example: "Event-driven architecture is crucial for microservices because it enables loose coupling..."
+        original_file:
+          type: string
+          description: Original filename of the audio/video file
+          example: "fowler-microservices-decomposition.mp3"
+        segment_id:
+          type: string
+          description: Unique identifier for this content segment
+          example: "seg_001_fowler_15.5_45.2"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message describing what went wrong
+          example: "Invalid email format"
+      additionalProperties: false
+
+# API Usage Examples
+x-usage-examples:
+  curl_example: |
+    # Basic query example
+    curl -X POST "https://api-dev.your-domain.com/query" \
+      -H "Content-Type: application/json" \
+      -H "x-api-key: icaet-ak-your-api-key-here" \
+      -d '{
+        "question": "What are microservices design patterns?",
+        "email": "developer@company.com"
+      }'
+
+  python_example: |
+    import requests
+    
+    url = "https://api-dev.your-domain.com/query"
+    headers = {
+        "Content-Type": "application/json",
+        "x-api-key": "icaet-ak-your-api-key-here"
+    }
+    data = {
+        "question": "How do you handle distributed transactions in microservices?",
+        "email": "developer@company.com"
+    }
+    
+    response = requests.post(url, json=data, headers=headers)
+    results = response.json()
+    
+    for match in results["pinecone_matches"]:
+        print(f"Speaker: {', '.join(match['speaker'])}")
+        print(f"Title: {match['title']}")
+        print(f"Content: {match['text'][:100]}...")
+        print("---")
+
+# Rate Limiting and Usage Guidelines
+x-rate-limits:
+  description: |
+    Current rate limits:
+    - 100 requests per minute per API key
+    - 1000 requests per hour per API key
+    - Each query processes up to 5 content matches
+    
+x-best-practices:
+  description: |
+    **Query Guidelines:**
+    - Use specific, technical questions for better results
+    - Include speaker names when asking about specific individuals
+    - Reference specific technologies, patterns, or concepts
+    - Avoid overly broad or general questions
+    
+    **Integration Tips:**
+    - Cache responses when appropriate to reduce API calls
+    - Handle rate limiting with exponential backoff
+    - Validate email addresses before making requests
+    - Store and reuse API keys securely (never in client-side code) 

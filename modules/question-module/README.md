@@ -31,6 +31,22 @@ The module consists of:
    - API key required in `x-api-key` header
    - Email-based authorization using access list
 
+## API Documentation
+
+The complete API specification is available as an OpenAPI 3.0 schema:
+
+- **OpenAPI Schema**: [openapi/openapi.yaml](openapi/openapi.yaml)
+- **API Documentation**: [openapi/README.md](openapi/README.md)
+
+The OpenAPI schema includes:
+- Complete endpoint documentation
+- Request/response schemas
+- Authentication requirements
+- Usage examples for ChatGPT integration
+- Error handling specifications
+
+For ChatGPT integration and detailed API usage, refer to the [API specification documentation](openapi/README.md).
+
 ## Setup
 
 1. **Dependencies**
