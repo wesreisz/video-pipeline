@@ -14,56 +14,250 @@ This document outlines the standards and best practices for using Terraform in t
 infra/
 ├── environments/
 │   ├── dev/
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
+│   │   ├── main.tf           # Environment-specific resources
+│   │   ├── variables.tf      # Environment variables
+│   │   ├── outputs.tf        # Environment outputs
+│   │   ├── secrets.tf        # Secrets management
+│   │   ├── terraform.tfvars  # Environment values
+│   │   └── deploy.sh         # Deployment automation
 │   └── prod/
-├── modules/
-    ├── s3/
+├── modules/                  # Reusable Terraform modules
+│   ├── lambda/               # Lambda function module
+│   ├── lambda-embedding/     # Specialized embedding module
+│   ├── s3/                   # S3 bucket module
+│   ├── sqs/                  # SQS queue module
+│   ├── secrets/              # Secrets Manager module
+│   ├── api-gateway-domain/   # API Gateway domain module
+│   └── certificate/          # ACM certificate module
+└── build/                    # Built Lambda deployment packages
 ```
 
 - Organize resources by logical components (modules)
 - Separate environment-specific configurations
 - Use consistent file naming across all modules
+- Keep deployment artifacts in build/ directory
 
 ## Naming Conventions
 
 ### Resource Naming
-
 - Use snake_case for all resource names
-- Prefix resources with purpose or component
-- Include environment in resource names where appropriate
+- Include environment prefix: `{environment}_{service}_{resource_type}`
+- Examples: `dev_media_transcribe`, `prod_audio_segments_queue`
+- Be descriptive and avoid abbreviations
 
 ### Variable Naming
-
 - Use descriptive names that indicate purpose
 - For module inputs, use consistent naming across modules
-- Prefix environment-specific variables with `env_`
+- Environment-specific variables: `environment`, `project_name`
+- Service-specific variables: `openai_api_key`, `pinecone_api_key`
+
+### Tag Naming
+Apply consistent tags to all resources:
+```hcl
+tags = {
+  Environment = var.environment
+  Project     = var.project_name
+  ManagedBy   = "terraform"
+  Service     = "transcribe-module"  # When applicable
+}
+```
 
 ## Module Structure
 
-Each module should include:
+Each reusable module should include:
 
 1. `main.tf` - Primary resource definitions
-2. `variables.tf` - Input variables
-3. `outputs.tf` - Output values
-4. `README.md` - Documentation
+2. `variables.tf` - Input variables with descriptions and types
+3. `outputs.tf` - Output values for resource ARNs, IDs, URLs
+4. `README.md` - Module documentation with usage examples
+
+### Module Design Principles
+- **Single Responsibility**: Each module should manage one type of resource or related group
+- **Reusability**: Design for use across multiple environments
+- **Parameterization**: Use variables for customizable values
+- **Outputs**: Expose all necessary resource identifiers for other modules
+
+## Serverless Architecture Patterns
+
+### Lambda Function Module Pattern
+```hcl
+module "transcribe_lambda" {
+  source = "../../modules/lambda"
+  
+  function_name = "${var.environment}_media_transcribe"
+  handler       = "handlers/transcribe_handler.lambda_handler"
+  runtime       = "python3.9"
+  timeout       = 300
+  memory_size   = 256
+  
+  source_dir  = "../../../modules/transcribe-module/src"
+  output_path = "../../build/transcribe_lambda.zip"
+  
+  environment_variables = {
+    TRANSCRIPTION_OUTPUT_BUCKET = module.transcription_bucket.bucket_id
+    TRANSCRIBE_REGION          = "us-east-1"
+  }
+  
+  s3_bucket_arns    = [module.media_bucket.bucket_arn]
+  enable_transcribe = true
+  
+  tags = local.common_tags
+}
+```
+
+### Event-Driven Architecture
+- **EventBridge Rules**: Use consistent event patterns and targets
+- **Step Functions**: Define workflows in JSON with proper error handling
+- **SQS Integration**: Configure dead letter queues and retry policies
+- **S3 Events**: Use CloudTrail for reliable event triggering
+
+### IAM Best Practices
+- **Least Privilege**: Grant minimum necessary permissions
+- **Resource-Specific**: Use resource ARNs instead of wildcards where possible
+- **Service Roles**: Create dedicated roles for each service
+- **Policy Modules**: Reuse common IAM policies through modules
+
+## State Management
+
+### Backend Configuration
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "video-pipeline-terraform-state"
+    key            = "{environment}/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "video-pipeline-terraform-locks-{environment}"
+    encrypt        = true
+  }
+}
+```
+
+### State Isolation
+- Separate state files per environment
+- Use DynamoDB for state locking
+- Enable state encryption
+- Regular state backups
 
 ## Security Practices
 
-- Store sensitive values in AWS Secrets Manager, not in code
-- Use IAM roles with least privilege
-- Enable encryption for all applicable resources
+### Secrets Management
+- **Never store secrets in Terraform code**
+- Use AWS Secrets Manager for API keys and sensitive values
+- Reference secrets by ARN in Terraform
+- Rotate secrets regularly
+
+### Infrastructure Security
+- Enable encryption for all applicable resources (S3, Lambda, SQS)
+- Use VPC endpoints where appropriate
+- Implement proper IAM policies with least privilege
+- Enable CloudTrail for audit logging
 - Use security groups to restrict access
-- Regularly audit IAM permissions
 
-## Code Quality
+### Example Secrets Module Usage
+```hcl
+module "secrets" {
+  source = "../../modules/secrets"
 
+  environment              = var.environment
+  openai_api_key          = var.openai_api_key
+  pinecone_api_key        = var.pinecone_api_key
+  video_pipeline_api_key  = var.video_pipeline_api_key
+}
+```
+
+## Code Quality and Validation
+
+### Pre-commit Checks
 - Run `terraform fmt` before committing code
-- Run `terraform validate` to check for errors
+- Run `terraform validate` to check for syntax errors
+- Use `terraform plan` to review changes before apply
 - Use consistent indentation (2 spaces)
-- Use comments to explain complex configurations
-- Keep resource blocks concise and focused
 
-## Terraform version
-- Should be greater than or equal to 5.91.0
+### Documentation
+- Add comments to explain complex configurations
+- Keep resource blocks concise and focused
+- Document module inputs and outputs
+- Include usage examples in README files
+
+### Version Constraints
+```hcl
+terraform {
+  required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.91.0"
+    }
+  }
+}
+```
+
+## Deployment Automation
+
+### Automated Deployment Pattern
+Use deployment scripts that:
+1. Validate Terraform syntax
+2. Plan infrastructure changes
+3. Apply changes with approval
+4. Verify deployment success
+5. Run post-deployment tests
+
+### Environment Promotion
+- Test changes in dev environment first
+- Use identical module versions across environments
+- Promote configuration through version control
+- Validate each environment independently
+
+## Monitoring and Observability
+
+### CloudWatch Integration
+- Create dashboards for key metrics
+- Set up alarms for failure conditions
+- Enable detailed monitoring for Lambda functions
+- Log all infrastructure changes
+
+### Resource Tagging Strategy
+Implement comprehensive tagging for:
+- Cost allocation and tracking
+- Resource organization
+- Automation and filtering
+- Compliance and governance
+
+## Step Functions Patterns
+
+### Workflow Definition
+```hcl
+resource "aws_sfn_state_machine" "video_processing" {
+  name     = "${var.environment}_video_processing"
+  role_arn = aws_iam_role.step_functions_role.arn
+
+  definition = jsonencode({
+    Comment = "Video processing pipeline"
+    StartAt = "PrepareS3EventData"
+    States = {
+      # Define workflow with proper error handling
+      # Include retry policies and catch blocks
+      # Use parallel execution where appropriate
+    }
+  })
+}
+```
+
+### Error Handling
+- Implement retry policies with exponential backoff
+- Use catch blocks for graceful error handling
+- Define failure states with meaningful error messages
+- Log workflow execution for debugging
+
+## Cost Optimization
+
+### Resource Sizing
+- Right-size Lambda memory and timeout settings
+- Use appropriate storage classes for S3
+- Monitor and optimize concurrent execution limits
+- Implement lifecycle policies for temporary data
+
+### Reserved Capacity
+- Consider reserved capacity for predictable workloads
+- Monitor usage patterns for optimization opportunities
+- Use Spot instances for development environments where appropriate

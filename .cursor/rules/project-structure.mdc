@@ -55,12 +55,13 @@ When importing within a module (e.g., embedding-module, chunking-module), follow
   - `chunking-module/`: Service for chunking the transcriptions
   - `transcribe-module/`: Service for transcribing media files
   - `embedding-module/`: Service for creating embeddings and storing them in pinecone
+  - `question-module/`: Service for handling Q&A API requests
 
 - `samples/`: Sample media files for testing
   - Contains sample audio files (e.g., sample.mp3)
 
 - Configuration files:
-  - `pip-requirements.txt`: Python dependencies
+  - `requirements.txt`: Python dependencies
   - `dev-requirements.txt`: Development-specific Python dependencies
   - `.gitignore`: Git ignore patterns
 
@@ -69,12 +70,53 @@ This structure follows a modular design pattern where:
 2. Infrastructure is defined in `infra/`
 3. Sample data for testing is in `samples/`
 
-Each modules should be structured:
-- <name>-module
-  - specs - llm prompts
-  - src - source code
-    - handlers
-    - models
-    - services
-    - utils
-  - tests
+## Module Architecture Guidelines
+
+### Required Module Structure
+Each module MUST follow this structure:
+```
+<name>-module/
+├── src/                    # Source code
+│   ├── handlers/           # Lambda entry points only
+│   ├── services/           # Business logic and external service interactions
+│   ├── models/             # Data structures and DTOs
+│   └── utils/              # Helper functions and utilities
+├── tests/                  # Module-specific tests
+│   ├── unit/               # Unit tests
+│   ├── integration/        # Integration tests
+│   └── conftest.py         # Pytest configuration with PYTHONPATH setup
+├── specs/                  # Module specifications and LLM prompts
+├── requirements.txt        # Runtime dependencies
+├── dev-requirements.txt    # Development dependencies
+└── README.md               # Module documentation
+```
+
+### Service Boundaries
+- **Independent Deployability**: Each module is an independent deployable unit
+- **Event Communication**: Modules communicate only via events (EventBridge/SQS) or shared storage (S3)
+- **No Direct Imports**: Never import code between modules
+- **Isolated Dependencies**: Each module manages its own dependencies and virtual environment
+
+### Handler Guidelines
+- **Thin Handlers**: Keep Lambda handlers thin - delegate to service layer
+- **Consistent Logging**: Always log incoming events for debugging
+- **Standard Response Format**: Return consistent EventBridge-compatible response format
+- **Error Handling**: Use centralized error handling utilities
+
+### Service Layer Patterns
+- **Business Logic Isolation**: All business logic lives in the services/ directory
+- **External Service Interactions**: Handle AWS SDK calls, API calls, and external dependencies
+- **Pure Functions**: Prefer stateless, testable functions
+- **Configuration via Environment**: Use environment variables for configuration
+
+### Communication Patterns
+- **Event-Driven**: Services communicate via EventBridge events and SQS messages
+- **Shared Storage**: Use S3 for large data sharing (transcriptions, chunks)
+- **Metadata Propagation**: Include metadata in all event payloads
+- **Asynchronous Processing**: Design for eventual consistency
+
+### Dependency Management
+- **Module Independence**: Each module maintains separate virtual environments
+- **Shared Dependencies**: Common dependencies defined at project level
+- **Version Pinning**: Pin specific versions in requirements.txt
+- **Development Tools**: Keep dev dependencies separate in dev-requirements.txt

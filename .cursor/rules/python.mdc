@@ -5,15 +5,20 @@ alwaysApply: false
 ---
 # 🧼 Clean Python Code Guidelines
 
-Language-level best practices for writing clear, idiomatic, maintainable Python code 
-
+Language-level best practices for writing clear, idiomatic, maintainable Python code for the Video Pipeline project.
 
 ## ✅ 1. Use Type Hints Everywhere
 
 Type hints make inputs and outputs explicit and help both humans and tools (including LLMs) understand your code.
 
 ```python
+from typing import Dict, List, Optional, Union
+import boto3
+
 def fetch_user(user_id: str) -> User:
+    ...
+
+def process_s3_event(event: Dict, context: Any) -> Dict[str, Any]:
     ...
 ```
 
@@ -30,6 +35,13 @@ Use `Optional`, `Union`, `List`, `Dict`, `Literal`, etc., when appropriate.
 ```python
 def calculate_discount(price: float, percent: float) -> float:
     return price * (1 - percent / 100)
+
+def extract_s3_event_data(event: Dict) -> tuple[str, str]:
+    """Extract bucket and key from S3 event."""
+    s3_info = event['Records'][0]['s3']
+    bucket = s3_info['bucket']['name']
+    key = s3_info['object']['key']
+    return bucket, key
 ```
 
 ---
@@ -53,12 +65,21 @@ def calculate_discount(price: float, percent: float) -> float:
 
 ```python
 from dataclasses import dataclass
+from typing import Optional
 
 @dataclass
-class Item:
-    name: str
-    price: float
-    quantity: int = 1
+class MediaMetadata:
+    speaker: Optional[str] = None
+    title: Optional[str] = None
+    track: Optional[str] = None
+    day: Optional[str] = None
+
+@dataclass
+class TranscriptionSegment:
+    start_time: float
+    end_time: float
+    text: str
+    confidence: Optional[float] = None
 ```
 
 Benefits:
@@ -78,6 +99,19 @@ def calculate_tax(amount: float, rate: float) -> float:
     Returns the tax amount for a given value.
     """
     return amount * rate
+
+def process_media(bucket: str, key: str) -> str:
+    """
+    Process media file through AWS Transcribe and return output key.
+    
+    Args:
+        bucket: S3 bucket containing the media file
+        key: S3 object key for the media file
+        
+    Returns:
+        S3 key of the generated transcription file
+    """
+    pass
 ```
 
 ---
@@ -107,6 +141,19 @@ def process_user(user: User):
     if not user.active:
         return
     # Proceed with logic
+
+def lambda_handler(event, context):
+    """Lambda handler with early returns for invalid events."""
+    if 'Records' not in event:
+        logger.error("No Records found in event")
+        return {'statusCode': 400, 'body': 'Invalid event format'}
+    
+    if not event['Records']:
+        logger.error("Empty Records array")
+        return {'statusCode': 400, 'body': 'No records to process'}
+    
+    # Process valid event
+    return process_records(event['Records'])
 ```
 
 ---
@@ -116,15 +163,18 @@ def process_user(user: User):
 Use classes when state and behavior logically belong together.
 
 ```python
-class ShoppingCart:
-    def __init__(self):
-        self.items: List[Item] = []
+class TranscriptionService:
+    def __init__(self, transcribe_client: boto3.client):
+        self.transcribe_client = transcribe_client
+        self.output_bucket = os.environ['TRANSCRIPTION_OUTPUT_BUCKET']
 
-    def add(self, item: Item):
-        self.items.append(item)
+    def start_job(self, bucket: str, key: str) -> str:
+        """Start transcription job and return job name."""
+        pass
 
-    def total(self) -> float:
-        return sum(i.price * i.quantity for i in self.items)
+    def get_job_status(self, job_name: str) -> str:
+        """Get current status of transcription job."""
+        pass
 ```
 
 ---
@@ -139,6 +189,19 @@ def parse_int(value: str) -> int:
         return int(value)
     except ValueError:
         raise InvalidInputError("Not a number")
+
+class TranscriptionError(Exception):
+    """Custom exception for transcription failures."""
+    pass
+
+def get_transcription_result(job_name: str) -> Dict:
+    """Get transcription result or raise TranscriptionError."""
+    response = transcribe_client.get_transcription_job(TranscriptionJobName=job_name)
+    
+    if response['TranscriptionJob']['TranscriptionJobStatus'] == 'FAILED':
+        raise TranscriptionError(f"Transcription job {job_name} failed")
+    
+    return response
 ```
 
 Use custom exceptions for domain-specific errors.
@@ -156,12 +219,230 @@ class SpecialList(list): ...
 
 Good:
 ```python
-class SpecialList:
-    def __init__(self, values: List[int]):
-        self.values = values
+class ChunkProcessor:
+    def __init__(self, chunks: List[str]):
+        self.chunks = chunks
+        self.sqs_client = boto3.client('sqs')
 ```
-## ✅ 11. Installing Libraries
+
+---
+
+## ✅ 11. Lambda Handler Patterns
+
+### Standard Handler Structure
+```python
+import json
+import logging
+from typing import Dict, Any
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event: Dict, context: Any) -> Dict[str, Any]:
+    """
+    Standard Lambda handler pattern for video pipeline.
+    """
+    try:
+        logger.info(f"Received event: {json.dumps(event)}")
+        
+        # Extract and validate event data
+        records = extract_event_records(event)
+        if not records:
+            return error_response(400, "No valid records found")
+        
+        # Process the event
+        result = process_event_records(records)
+        
+        # Return EventBridge-compatible response
+        return success_response(result)
+        
+    except Exception as e:
+        logger.error(f"Error processing event: {str(e)}", exc_info=True)
+        return error_response(500, f"Processing failed: {str(e)}")
+
+def extract_event_records(event: Dict) -> List[Dict]:
+    """Extract records from either EventBridge or S3 event format."""
+    # Handle EventBridge format
+    if 'detail' in event:
+        return event.get('detail', {}).get('records', [])
+    
+    # Handle direct S3 format
+    return event.get('Records', [])
+
+def success_response(data: Any) -> Dict[str, Any]:
+    """Standard success response format."""
+    return {
+        'statusCode': 200,
+        'detail': data,
+        'body': json.dumps({'message': 'Success', 'data': data})
+    }
+
+def error_response(status_code: int, message: str) -> Dict[str, Any]:
+    """Standard error response format."""
+    return {
+        'statusCode': status_code,
+        'body': json.dumps({'error': message})
+    }
+```
+
+---
+
+## ✅ 12. AWS SDK Best Practices
+
+### Client Initialization
+```python
+import boto3
+from botocore.exceptions import ClientError
+
+# Initialize clients at module level for Lambda reuse
+s3_client = boto3.client('s3')
+transcribe_client = boto3.client('transcribe')
+sqs_client = boto3.client('sqs')
+
+def upload_to_s3(bucket: str, key: str, data: bytes) -> None:
+    """Upload data to S3 with proper error handling."""
+    try:
+        s3_client.put_object(Bucket=bucket, Key=key, Body=data)
+        logger.info(f"Successfully uploaded {key} to {bucket}")
+    except ClientError as e:
+        logger.error(f"Failed to upload to S3: {e}")
+        raise
+```
+
+### Error Handling
+```python
+from botocore.exceptions import ClientError, NoCredentialsError
+
+def safe_s3_operation(bucket: str, key: str) -> Optional[Dict]:
+    """Perform S3 operation with comprehensive error handling."""
+    try:
+        response = s3_client.get_object(Bucket=bucket, Key=key)
+        return response
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+        if error_code == 'NoSuchKey':
+            logger.warning(f"Object {key} not found in bucket {bucket}")
+            return None
+        elif error_code == 'NoSuchBucket':
+            logger.error(f"Bucket {bucket} does not exist")
+            raise
+        else:
+            logger.error(f"Unexpected S3 error: {e}")
+            raise
+    except NoCredentialsError:
+        logger.error("AWS credentials not found")
+        raise
+```
+
+---
+
+## ✅ 13. Configuration and Environment
+
+### Environment Variables
+```python
+import os
+from typing import Optional
+
+def get_required_env(key: str) -> str:
+    """Get required environment variable or raise error."""
+    value = os.environ.get(key)
+    if value is None:
+        raise ValueError(f"Required environment variable {key} not set")
+    return value
+
+def get_optional_env(key: str, default: str = "") -> str:
+    """Get optional environment variable with default."""
+    return os.environ.get(key, default)
+
+# Usage
+TRANSCRIPTION_BUCKET = get_required_env('TRANSCRIPTION_OUTPUT_BUCKET')
+LOG_LEVEL = get_optional_env('LOG_LEVEL', 'INFO')
+```
+
+---
+
+## ✅ 14. Logging Best Practices
+
+### Structured Logging
+```python
+import logging
+import json
+from typing import Dict, Any
+
+logger = logging.getLogger()
+
+def log_event(level: str, message: str, **kwargs) -> None:
+    """Log structured event with context."""
+    log_data = {
+        'message': message,
+        'timestamp': datetime.utcnow().isoformat(),
+        **kwargs
+    }
+    
+    if level == 'INFO':
+        logger.info(json.dumps(log_data))
+    elif level == 'ERROR':
+        logger.error(json.dumps(log_data))
+    elif level == 'DEBUG':
+        logger.debug(json.dumps(log_data))
+
+# Usage
+log_event('INFO', 'Processing transcription', 
+          bucket=bucket, key=key, job_name=job_name)
+```
+
+---
+
+## ✅ 15. Event Processing Patterns
+
+### EventBridge Event Handling
+```python
+def handle_eventbridge_event(event: Dict) -> Dict[str, Any]:
+    """Handle EventBridge event with metadata preservation."""
+    detail = event.get('detail', {})
+    
+    # Extract S3 information
+    request_params = detail.get('requestParameters', {})
+    bucket = request_params.get('bucketName')
+    key = request_params.get('key')
+    
+    if not bucket or not key:
+        raise ValueError("Missing bucket or key in EventBridge event")
+    
+    # Process with metadata
+    metadata = extract_metadata_from_event(event)
+    result = process_file(bucket, key, metadata)
+    
+    return {
+        'statusCode': 200,
+        'detail': {
+            'records': [{
+                's3': {'bucket': {'name': bucket}, 'object': {'key': key}},
+                'metadata': metadata,
+                'result': result
+            }]
+        }
+    }
+```
+
+---
+
+## ✅ 16. Installing Libraries
 Always use requirements.txt or dev-requirements.txt to install libraries
 
+### Dependency Management
+```python
+# requirements.txt - production dependencies
+boto3>=1.26.0
+pinecone-client>=2.2.0
+openai>=1.0.0
+python-json-logger>=2.0.0
 
-> “Code is read more often than it is written — especially by your AI pair programmer.”
+# dev-requirements.txt - development dependencies  
+pytest>=7.0.0
+moto>=4.0.0
+black>=22.0.0
+mypy>=1.0.0
+```
+
+> "Code is read more often than it is written — especially by your AI pair programmer."

@@ -3,5 +3,184 @@ description:
 globs: *.py
 alwaysApply: false
 ---
-Architecture Considerations:
-* We building an event driven system. There are multiple ways you can pass events on AWS. When as havea  choice between different formats, we will always use EventBridge format.
+# Video Pipeline Project Architecture
+
+## Core Architecture Principles
+
+### Event-Driven System Design
+* We are building an event driven system. There are multiple ways you can pass events on AWS. When we have a choice between different formats, we will **always use EventBridge format**.
+* All service communication happens through events, not direct calls
+* Services are loosely coupled through shared events and storage
+* Each processing stage validates input and produces structured output
+
+### Serverless-First Architecture
+* Leverage AWS Lambda for all compute operations with automatic scaling
+* Design for stateless, ephemeral execution environments
+* Use managed services to eliminate infrastructure management overhead
+* Optimize for cost-efficiency with pay-per-use pricing models
+
+### Infrastructure as Code (IaC)
+* All infrastructure is defined and managed through Terraform
+* Environment separation with isolated state management
+* Reusable modules for consistent resource patterns
+* Automated deployment with validation and testing
+
+## Event Flow Patterns
+
+### Primary Event Flow
+```mermaid
+S3 Upload → CloudTrail → EventBridge → Step Functions → [Transcribe → Chunk → Embed] → Pinecone
+```
+
+### EventBridge Event Format Standard
+All events MUST follow this standardized format:
+```json
+{
+  "detail": {
+    "requestParameters": {
+      "bucketName": "bucket-name",
+      "key": "object-key"
+    },
+    "records": [...],
+    "metadata": {
+      "speaker": "...",
+      "title": "...",
+      "track": "...",
+      "day": "..."
+    }
+  }
+}
+```
+
+### Lambda Response Format
+All Lambda functions MUST return EventBridge-compatible responses:
+```json
+{
+  "statusCode": 200,
+  "detail": {
+    "records": [...],
+    "metadata": {...}
+  },
+  "body": "{\"message\": \"Success\", \"data\": {...}}"
+}
+```
+
+## Service Communication Patterns
+
+### Asynchronous Processing
+* Use SQS queues for reliable message buffering between services
+* Implement proper retry policies with exponential backoff
+* Design for eventual consistency across service boundaries
+* Handle partial failures gracefully with circuit breaker patterns
+
+### Data Sharing Patterns
+* **Large Data**: Store in S3 and pass references through events
+* **Metadata**: Include in event payloads for processing context
+* **Configuration**: Use environment variables and AWS Secrets Manager
+* **State**: Maintain in Step Functions for workflow orchestration
+
+### Error Handling Strategy
+* Centralized error handling with consistent response formats
+* Step Functions for workflow-level retry and error management
+* Dead letter queues for unprocessable messages
+* Comprehensive logging for debugging and monitoring
+
+## Security Architecture
+
+### Secrets Management
+* All API keys and sensitive data stored in AWS Secrets Manager
+* IAM roles with least privilege principle
+* No secrets in code or environment variables
+* Regular secret rotation policies
+
+### Access Control
+* Service-specific IAM roles with minimal required permissions
+* Resource-level access control using ARNs, not wildcards
+* API Gateway authentication for external endpoints
+* VPC endpoints for private service communication where needed
+
+### Data Protection
+* Encryption at rest for all storage (S3, SQS, Secrets Manager)
+* Encryption in transit for all API communications
+* Input validation and sanitization at all entry points
+* Audit logging through CloudTrail for compliance
+
+## Operational Architecture
+
+### Monitoring and Observability
+* Structured logging with consistent JSON format
+* CloudWatch metrics for performance and health monitoring
+* Distributed tracing for end-to-end request tracking
+* Automated alerting for failure conditions
+
+### Cost Optimization
+* Right-sized Lambda memory and timeout configurations
+* S3 lifecycle policies for data management
+* Reserved capacity for predictable workloads
+* Resource tagging for cost allocation and tracking
+
+### Deployment Strategy
+* Blue-green deployments for zero-downtime updates
+* Automated testing at multiple levels (unit → integration → e2e)
+* Environment promotion through version control
+* Rollback capabilities for failed deployments
+
+## Scalability Patterns
+
+### Horizontal Scaling
+* Lambda automatic scaling based on demand
+* SQS queue scaling for message processing
+* Step Functions for parallel workflow execution
+* Pinecone vector database scaling for embedding storage
+
+### Performance Optimization
+* Lambda provisioned concurrency for critical paths
+* Connection pooling for external service calls
+* Efficient data serialization and compression
+* Caching strategies for frequently accessed data
+
+### Capacity Planning
+* Monitor concurrent Lambda execution limits
+* Plan for SQS message throughput requirements
+* Consider Step Functions execution limits
+* External service rate limiting (OpenAI API, Pinecone)
+
+## Development Workflow Architecture
+
+### Module Independence
+* Each service module is independently deployable
+* Separate virtual environments and dependency management
+* Module-specific testing suites with shared test infrastructure
+* Clear API contracts between modules
+
+### Testing Strategy
+* **Unit Tests**: Mock all external dependencies, test business logic
+* **Integration Tests**: Use moto for AWS service mocking
+* **E2E Tests**: Validate complete workflows with real AWS resources
+* **Contract Tests**: Validate EventBridge event format compliance
+
+### Code Quality Enforcement
+* Automated code formatting (black, isort)
+* Type checking with mypy
+* Linting with flake8
+* Pre-commit hooks for quality gates
+
+## Data Architecture
+
+### Data Flow Design
+* **Input**: Media files uploaded to S3 with metadata
+* **Processing**: Sequential transformation through pipeline stages
+* **Storage**: Structured output in S3 and vector embeddings in Pinecone
+* **Query**: Vector similarity search with LLM completion
+
+### Data Consistency
+* Event-driven eventual consistency model
+* Idempotent processing for replay capability
+* Versioned data storage for audit trails
+* Cleanup policies for temporary processing data
+
+### Backup and Recovery
+* S3 versioning for data protection
+* Cross-region replication for disaster recovery
+* Point-in-time recovery for critical data
+* Automated backup verification and testing
