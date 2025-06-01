@@ -358,10 +358,12 @@ jobs:
     
     - name: Run End-to-End Tests
       working-directory: tests/e2e
+      env:
+        PYTHONUNBUFFERED: 1
       run: |
         echo "🔄 Running end-to-end tests..."
         chmod +x run_e2e_test.sh
-        ./run_e2e_test.sh --cleanup
+        python -u pipeline_e2e_test.py --input-bucket dev-media-transcribe-input --output-bucket dev-media-transcribe-output --sample-file ../../samples/hello-my_name_is_wes.mp3 --timeout 300
     
     - name: Upload E2E Test Results
       if: always()

@@ -44,26 +44,37 @@ NO_COLOR = "\033[0m"
 def print_success(message):
     """Print a success message."""
     print(f"{GREEN}✅ {message}{NO_COLOR}")
+    sys.stdout.flush()
 
 
 def print_error(message):
     """Print an error message."""
     print(f"{RED}❌ {message}{NO_COLOR}")
+    sys.stdout.flush()
 
 
 def print_info(message):
     """Print an information message."""
     print(f"{YELLOW}{message}{NO_COLOR}")
+    sys.stdout.flush()
 
 
 def print_header(message):
     """Print a header message."""
     print(f"\n{BOLD}{message}{NO_COLOR}")
+    # Add GitHub Actions group annotation for better organization
+    if os.environ.get('GITHUB_ACTIONS'):
+        print(f"::group::{message.strip()}")
+    sys.stdout.flush()
 
 
 def print_divider():
     """Print a divider line for better readability."""
     print_info("-" * 80)
+    # End GitHub Actions group if we're in one
+    if os.environ.get('GITHUB_ACTIONS'):
+        print("::endgroup::")
+    sys.stdout.flush()
 
 
 def parse_args():
