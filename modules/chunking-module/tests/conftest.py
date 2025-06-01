@@ -1,9 +1,33 @@
 import json
+import os
 from typing import Dict, List
 import pytest
 from boto3.session import Session
 from mypy_boto3_s3.type_defs import GetObjectOutputTypeDef
 from mypy_boto3_sqs.type_defs import SendMessageBatchResultTypeDef
+
+@pytest.fixture(autouse=True)
+def setup_aws_environment():
+    """Setup AWS environment variables for testing."""
+    # Only set mock environment variables if we're not running live tests
+    if not os.getenv('RUN_LIVE_TESTS'):
+        # Set AWS region and dummy credentials for boto3
+        os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+        os.environ['AWS_REGION'] = 'us-east-1'
+        os.environ['AWS_ACCESS_KEY_ID'] = 'test-access-key'
+        os.environ['AWS_SECRET_ACCESS_KEY'] = 'test-secret-key'
+        
+        # Set environment variables specific to chunking module
+        os.environ['ENVIRONMENT'] = 'test'
+        os.environ['SQS_QUEUE_URL'] = 'https://sqs.us-east-1.amazonaws.com/123456789/test-queue'
+        
+    yield
+    
+    # Clean up environment variables after tests
+    if not os.getenv('RUN_LIVE_TESTS'):
+        for key in ['AWS_DEFAULT_REGION', 'AWS_REGION', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 
+                   'ENVIRONMENT', 'SQS_QUEUE_URL']:
+            os.environ.pop(key, None)
 
 @pytest.fixture
 def mock_aws_credentials():

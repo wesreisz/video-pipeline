@@ -6,7 +6,14 @@ import io
 
 class S3Util:
     def __init__(self):
-        self.s3_client = boto3.client('s3')
+        self._s3_client = None
+    
+    @property
+    def s3_client(self):
+        """Lazy initialization of boto3 S3 client."""
+        if self._s3_client is None:
+            self._s3_client = boto3.client('s3')
+        return self._s3_client
     
     def get_access_list(self, bucket: str, key: str) -> Optional[List[str]]:
         """

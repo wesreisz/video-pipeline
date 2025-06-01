@@ -38,6 +38,13 @@ jobs:
     
     - name: Test ${{ matrix.module }}
       working-directory: modules/${{ matrix.module }}
+      env:
+        # Set AWS region for tests that might need boto3
+        AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
+        AWS_REGION: ${{ env.AWS_REGION }}
+        # Set dummy AWS credentials for testing (many AWS SDKs require these to be set)
+        AWS_ACCESS_KEY_ID: dummy-access-key-for-testing
+        AWS_SECRET_ACCESS_KEY: dummy-secret-key-for-testing
       run: |
         echo "🧪 Testing ${{ matrix.module }}..."
         

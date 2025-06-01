@@ -19,9 +19,16 @@ class SecretsService:
     
     def __init__(self):
         self._secrets_cache: Dict[str, Dict] = {}
-        self._client = boto3.client('secretsmanager')
+        self._client = None  # Initialize client lazily
         self._secret_name = f"{os.environ.get('ENVIRONMENT', 'dev')}-video-pipeline-secrets"
         self._use_env_fallback = os.environ.get('USE_ENV_FALLBACK', 'true').lower() == 'true'
+    
+    @property
+    def client(self):
+        """Lazy initialization of boto3 client."""
+        if self._client is None:
+            self._client = boto3.client('secretsmanager')
+        return self._client
     
     def get_secret(self, key: str) -> Optional[str]:
         """
@@ -37,12 +44,23 @@ class SecretsService:
         try:
             # Try AWS Secrets Manager first
             if self._secret_name not in self._secrets_cache:
-                response = self._client.get_secret_value(SecretId=self._secret_name)
+                response = self.client.get_secret_value(SecretId=self._secret_name)
                 self._secrets_cache[self._secret_name] = json.loads(response['SecretString'])
             
             return self._secrets_cache[self._secret_name].get(key)
         except ClientError as e:
             logger.error(f"Failed to retrieve secret {key}: {str(e)}")
+            
+            # Fall back to environment variables if enabled
+            if self._use_env_fallback:
+                env_key = key.upper()
+                if env_value := os.environ.get(env_key):
+                    logger.info(f"Using environment variable fallback for {key}")
+                    return env_value
+            
+            return None
+        except Exception as e:
+            logger.error(f"Unexpected error retrieving secret {key}: {str(e)}")
             
             # Fall back to environment variables if enabled
             if self._use_env_fallback:

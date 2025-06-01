@@ -13,11 +13,18 @@ class AuthUtil:
         """Initialize AuthUtil with empty access list."""
         self._authorized_emails: List[str] = []
         self._secrets_service = get_secrets_service()
-        self._s3_client = boto3.client('s3')
+        self._s3_client = None  # Lazy initialization
         self._last_refresh: Optional[datetime] = None
         self._cache_ttl: int = 300  # 5 minutes in seconds
         logger.info("AuthUtil initialized, loading access list...")
         self._load_access_list()
+    
+    @property
+    def s3_client(self):
+        """Lazy initialization of boto3 S3 client."""
+        if self._s3_client is None:
+            self._s3_client = boto3.client('s3')
+        return self._s3_client
     
     def _is_cache_stale(self) -> bool:
         """Check if the cache is stale (older than 5 minutes)."""
@@ -43,7 +50,7 @@ class AuthUtil:
             logger.info(f"Fetching access list from bucket: {bucket}, key: {key}")
             
             # Get the file from S3
-            response = self._s3_client.get_object(Bucket=bucket, Key=key)
+            response = self.s3_client.get_object(Bucket=bucket, Key=key)
             content = response['Body'].read().decode('utf-8').splitlines()
             
             # Parse CSV content

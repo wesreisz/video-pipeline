@@ -25,9 +25,16 @@ class SecretsService:
     
     def __init__(self):
         """Initialize the secrets service with lazy loading."""
-        self._client = boto3.client('secretsmanager')
+        self._client = None  # Lazy initialization
         self._secret_name = f"{os.environ.get('ENVIRONMENT', 'dev')}-video-pipeline-secrets"
         self._use_env_fallback = os.environ.get('USE_ENV_FALLBACK', 'true').lower() == 'true'
+    
+    @property
+    def client(self):
+        """Lazy initialization of boto3 client."""
+        if self._client is None:
+            self._client = boto3.client('secretsmanager')
+        return self._client
     
     def _load_secrets(self) -> None:
         """
@@ -40,7 +47,7 @@ class SecretsService:
             return
             
         try:
-            response = self._client.get_secret_value(SecretId=self._secret_name)
+            response = self.client.get_secret_value(SecretId=self._secret_name)
             secrets_dict = json.loads(response['SecretString'])
             _SECRETS_CACHE.update(secrets_dict)
             _SECRETS_LOADED = True
