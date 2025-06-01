@@ -64,14 +64,14 @@ jobs:
         
         # Run tests based on module
         if [ "${{ matrix.module }}" = "transcribe-module" ]; then
-          python -m pytest -xvs tests/ --ignore=tests/integration
+          python -m pytest -xvs tests/ --ignore=tests/integration --junit-xml=pytest.xml
         elif [ "${{ matrix.module }}" = "chunking-module" ]; then
-          python -m pytest tests/ -v --cov=src.handlers --cov-report=term-missing
+          python -m pytest tests/ -v --cov=src.handlers --cov-report=term-missing --junit-xml=pytest.xml
         elif [ "${{ matrix.module }}" = "embedding-module" ]; then
-          python -m pytest tests/unit/ -v
+          python -m pytest tests/unit/ -v --junit-xml=pytest.xml
         elif [ "${{ matrix.module }}" = "question-module" ]; then
-          python -m pytest tests/unit/ -v
-          python -m pytest tests/integration -v
+          python -m pytest tests/unit/ -v --junit-xml=pytest-unit.xml
+          python -m pytest tests/integration -v --junit-xml=pytest-integration.xml
         fi
     
     - name: Upload test results for ${{ matrix.module }}
@@ -79,7 +79,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: test-results-${{ matrix.module }}
-        path: modules/${{ matrix.module }}/pytest.xml
+        path: modules/${{ matrix.module }}/pytest*.xml
         retention-days: 30
 
   build:
@@ -303,10 +303,58 @@ jobs:
         name: terraform-state
         path: infra/environments/dev/
     
+    - name: Debug Terraform Setup
+      working-directory: infra/environments/dev
+      run: |
+        echo "🔍 Debugging Terraform setup..."
+        pwd
+        echo "Contents of current directory:"
+        ls -la
+        echo "Checking if terraform.tfstate exists:"
+        ls -la terraform.tfstate || echo "terraform.tfstate not found"
+        echo "Checking Terraform version:"
+        terraform version
+        echo "Initializing Terraform..."
+        terraform init
+        echo "Listing all Terraform outputs:"
+        terraform output || echo "Failed to get outputs - checking why..."
+        echo "Checking state file content:"
+        terraform show -json | jq '.values.outputs | keys' || echo "Failed to parse state"
+    
     - name: Install E2E Test Dependencies
       working-directory: tests/e2e
       run: |
         pip install -r requirements.txt
+    
+    - name: Get API Endpoint (Fallback)
+      id: get-endpoint
+      run: |
+        echo "🔍 Getting API Gateway endpoint..."
+        
+        # Try Terraform output first
+        cd infra/environments/dev
+        API_ENDPOINT=""
+        if terraform output question_api_endpoint 2>/dev/null; then
+          API_ENDPOINT=$(terraform output -raw question_api_endpoint)
+          echo "✅ Got endpoint from Terraform: $API_ENDPOINT"
+        else
+          echo "⚠️ Terraform output failed, trying AWS CLI fallback..."
+          
+          # Get API Gateway ID from AWS
+          API_ID=$(aws apigateway get-rest-apis --query "items[?name=='dev_question_api'].id" --output text)
+          
+          if [ -n "$API_ID" ] && [ "$API_ID" != "None" ]; then
+            API_ENDPOINT="https://${API_ID}.execute-api.us-east-1.amazonaws.com/dev/query"
+            echo "✅ Built endpoint from AWS CLI: $API_ENDPOINT"
+          else
+            echo "❌ Could not determine API endpoint"
+            exit 1
+          fi
+        fi
+        
+        # Export for E2E test
+        echo "QUESTION_API_ENDPOINT=$API_ENDPOINT" >> $GITHUB_ENV
+        echo "endpoint=$API_ENDPOINT" >> $GITHUB_OUTPUT
     
     - name: Run End-to-End Tests
       working-directory: tests/e2e

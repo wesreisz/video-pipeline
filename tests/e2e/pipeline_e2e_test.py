@@ -564,11 +564,22 @@ def check_embedding_processing(test_id: str, expected_transcript: str, timeout: 
 
 def get_terraform_output(output_name):
     """Get a Terraform output value using the AWS CLI."""
+    # Check if environment variable is set (from GitHub Actions fallback)
+    if output_name == 'question_api_endpoint':
+        env_endpoint = os.environ.get('QUESTION_API_ENDPOINT')
+        if env_endpoint:
+            print_info(f"Using API endpoint from environment: {env_endpoint}")
+            return env_endpoint
+    
     try:
         # Change to the Terraform directory
         original_dir = os.getcwd()
         terraform_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 
                                    'infra', 'environments', 'dev')
+        
+        if not os.path.exists(terraform_dir):
+            raise FileNotFoundError(f"Terraform directory not found: {terraform_dir}")
+        
         os.chdir(terraform_dir)
         
         # Run terraform output command
@@ -581,10 +592,17 @@ def get_terraform_output(output_name):
         return result.stdout.strip()
     except subprocess.CalledProcessError as e:
         print_error(f"Failed to get Terraform output '{output_name}': {e}")
+        print_error(f"Error output: {e.stderr}")
         raise
     except Exception as e:
         print_error(f"Error getting Terraform output: {e}")
         raise
+    finally:
+        # Ensure we always change back to original directory
+        try:
+            os.chdir(original_dir)
+        except:
+            pass
 
 
 def get_secrets() -> Dict[str, str]:
