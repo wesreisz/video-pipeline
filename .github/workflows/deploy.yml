@@ -67,6 +67,10 @@ jobs:
         # Add any additional environment variables your deployment needs
         ENVIRONMENT: dev
         PYTHONPATH: ${{ github.workspace }}
+        # Terraform variables for API keys
+        TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+        TF_VAR_pinecone_api_key: ${{ secrets.PINECONE_API_KEY }}
+        TF_VAR_certificate_domain: ${{ secrets.CERTIFICATE_DOMAIN || 'icaet-dev.wesleyreisz.com' }}
     
     - name: Upload deployment artifacts
       if: always()

@@ -216,6 +216,11 @@ Go to your repository Settings → Secrets and variables → Actions, and add:
 - `AWS_ACCESS_KEY_ID`: Access Key ID from the `github-actions-video-pipeline` user (from step 6 above)
 - `AWS_SECRET_ACCESS_KEY`: Secret Access Key from the `github-actions-video-pipeline` user (from step 6 above)
 - `AWS_REGION`: Your AWS region (e.g., `us-east-1`)
+- `OPENAI_API_KEY`: Your OpenAI API key for embedding generation (starts with `sk-proj-...` or `sk-...`)
+- `PINECONE_API_KEY`: Your Pinecone API key for vector database access (starts with `pcsk_...`)
+
+#### Optional Secrets:
+- `CERTIFICATE_DOMAIN`: Your custom domain for SSL certificates (defaults to `icaet-dev.wesleyreisz.com`)
 
 ### 3. User Separation Best Practices
 
