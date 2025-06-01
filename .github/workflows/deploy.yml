@@ -8,15 +8,23 @@ on:
     types: [ closed ]
   workflow_dispatch: # Allow manual trigger
 
+env:
+  # Global environment variables
+  AWS_REGION: ${{ secrets.AWS_REGION || 'us-east-1' }}
+  TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+  TF_VAR_pinecone_api_key: ${{ secrets.PINECONE_API_KEY }}
+  TF_VAR_certificate_domain: ${{ secrets.CERTIFICATE_DOMAIN || 'icaet-dev.wesleyreisz.com' }}
+
 jobs:
-  deploy:
+  test:
+    name: Run Tests
     runs-on: ubuntu-latest
-    
-    # Only run on main/master branch pushes or merged PRs
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || (github.event.pull_request.merged == true && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master'))
     
-    permissions:
-      contents: read
+    strategy:
+      matrix:
+        module: [transcribe-module, chunking-module, embedding-module, question-module]
+      fail-fast: false  # Continue testing other modules even if one fails
     
     steps:
     - name: Checkout code
@@ -28,17 +36,125 @@ jobs:
         python-version: '3.11'
         cache: 'pip'
     
+    - name: Test ${{ matrix.module }}
+      working-directory: modules/${{ matrix.module }}
+      run: |
+        echo "🧪 Testing ${{ matrix.module }}..."
+        
+        # Create virtual environment
+        python -m venv .venv
+        source .venv/bin/activate
+        
+        # Install dependencies
+        pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install -r dev-requirements.txt
+        
+        # Install test requirements if exists
+        if [ -f requirements-test.txt ]; then
+          pip install -r requirements-test.txt
+        fi
+        
+        # Run tests based on module
+        if [ "${{ matrix.module }}" = "transcribe-module" ]; then
+          python -m pytest -xvs tests/ --ignore=tests/integration
+        elif [ "${{ matrix.module }}" = "chunking-module" ]; then
+          python -m pytest tests/ -v --cov=src.handlers --cov-report=term-missing
+        elif [ "${{ matrix.module }}" = "embedding-module" ]; then
+          python -m pytest tests/unit/ -v
+        elif [ "${{ matrix.module }}" = "question-module" ]; then
+          python -m pytest tests/unit/ -v
+          python -m pytest tests/integration -v
+        fi
+    
+    - name: Upload test results for ${{ matrix.module }}
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.module }}
+        path: modules/${{ matrix.module }}/pytest.xml
+        retention-days: 30
+
+  build:
+    name: Build Lambda Packages
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y zip unzip
+    
+    - name: Build Lambda Layers
+      run: |
+        echo "🏗️ Building Lambda layers..."
+        
+        # Build embedding module layer
+        cd modules/embedding-module/layer
+        chmod +x 1-install.sh 2-package.sh
+        ./1-install.sh && ./2-package.sh
+        
+        # Build question module layer  
+        cd ../../question-module/layer
+        chmod +x 1-install.sh 2-package.sh
+        ./1-install.sh && ./2-package.sh
+    
+    - name: Package Lambda Functions
+      run: |
+        echo "📦 Packaging Lambda functions..."
+        mkdir -p infra/build
+        
+        # Package each module
+        zip -r infra/build/transcribe_lambda.zip modules/transcribe-module/src/
+        zip -r infra/build/chunking_lambda.zip modules/chunking-module/src/
+        zip -r infra/build/embedding_lambda.zip modules/embedding-module/src/
+        zip -r infra/build/question_lambda.zip modules/question-module/src/
+        
+        echo "✅ Lambda packages created:"
+        ls -la infra/build/
+    
+    - name: Upload Lambda packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: lambda-packages
+        path: |
+          infra/build/
+          modules/*/layer/layer_content.zip
+        retention-days: 30
+
+  deploy:
+    name: Deploy Infrastructure
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download Lambda packages
+      uses: actions/download-artifact@v4
+      with:
+        name: lambda-packages
+        path: .
     
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        aws-region: ${{ env.AWS_REGION }}
     
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
@@ -46,53 +162,191 @@ jobs:
         terraform_version: ~1.5
         terraform_wrapper: false
     
-    - name: Verify AWS connection
+    - name: Verify AWS Connection
       run: |
+        echo "🔍 Verifying AWS connection..."
         aws sts get-caller-identity
         aws s3 ls || echo "S3 access check completed"
     
-    - name: Set environment variables
-      run: |
-        echo "PROJECT_ROOT=$GITHUB_WORKSPACE" >> $GITHUB_ENV
-    
-    - name: Make deploy script executable
-      run: chmod +x infra/environments/dev/deploy.sh
-    
-    - name: Run deployment
+    - name: Terraform Init
       working-directory: infra/environments/dev
       run: |
-        echo "Starting deployment process..."
-        ./deploy.sh
-      env:
-        # Add any additional environment variables your deployment needs
-        ENVIRONMENT: dev
-        PYTHONPATH: ${{ github.workspace }}
-        # Terraform variables for API keys
-        TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
-        TF_VAR_pinecone_api_key: ${{ secrets.PINECONE_API_KEY }}
-        TF_VAR_certificate_domain: ${{ secrets.CERTIFICATE_DOMAIN || 'icaet-dev.wesleyreisz.com' }}
+        echo "🚀 Initializing Terraform..."
+        terraform init
     
-    - name: Upload deployment artifacts
+    - name: Terraform Plan
+      working-directory: infra/environments/dev
+      run: |
+        echo "📋 Creating Terraform plan..."
+        terraform plan -out=tfplan
+    
+    - name: Terraform Apply
+      working-directory: infra/environments/dev
+      run: |
+        echo "🚢 Applying Terraform plan..."
+        terraform apply "tfplan"
+    
+    - name: Wait for Resources
+      working-directory: infra/environments/dev
+      run: |
+        echo "⏳ Waiting for AWS resources to be ready..."
+        
+        max_attempts=12
+        wait_time=10
+        attempt=1
+        
+        while [ $attempt -le $max_attempts ]; do
+          echo "Attempt $attempt of $max_attempts: Checking resource readiness..."
+          
+          # Check Lambda functions
+          transcribe_function=$(terraform output -raw transcribe_lambda_function_name)
+          chunking_function=$(terraform output -raw chunking_lambda_function_name)
+          embedding_function=$(terraform output -raw embedding_lambda_function_name)
+          
+          all_ready=true
+          for func in "$transcribe_function" "$chunking_function" "$embedding_function"; do
+            if ! aws lambda get-function --function-name "$func" --query 'Configuration.State' | grep -q "Active"; then
+              all_ready=false
+              break
+            fi
+          done
+          
+          # Check Step Functions
+          sfn_arn=$(terraform output -raw sfn_state_machine_arn)
+          if ! aws stepfunctions describe-state-machine --state-machine-arn "$sfn_arn" --query 'status' --output text | grep -q "ACTIVE"; then
+            all_ready=false
+          fi
+          
+          if [ "$all_ready" = true ]; then
+            echo "✅ All AWS resources are ready!"
+            break
+          fi
+          
+          echo "Resources not ready yet. Waiting $wait_time seconds..."
+          sleep $wait_time
+          attempt=$((attempt + 1))
+        done
+        
+        if [ $attempt -gt $max_attempts ]; then
+          echo "❌ Timeout waiting for resources to be ready"
+          exit 1
+        fi
+    
+    - name: Deploy Access List
+      working-directory: infra/environments/dev
+      run: |
+        echo "📋 Deploying access list..."
+        access_list_bucket=$(terraform output -raw access_list_bucket_name)
+        
+        if ! aws s3api head-object --bucket "$access_list_bucket" --key "access.csv" 2>/dev/null; then
+          if [ -f "../../../access.csv" ]; then
+            aws s3 cp "../../../access.csv" "s3://$access_list_bucket/access.csv"
+            echo "✅ Uploaded access.csv from project root"
+          elif [ -f "../../../modules/question-module/access-list/access.csv" ]; then
+            aws s3 cp "../../../modules/question-module/access-list/access.csv" "s3://$access_list_bucket/access.csv"
+            echo "✅ Uploaded default access.csv"
+          else
+            echo "⚠️ No access.csv found"
+          fi
+        else
+          echo "✅ access.csv already exists"
+        fi
+    
+    - name: Upload Terraform State
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: deployment-logs-${{ github.run_number }}
+        name: terraform-state
         path: |
-          infra/build/
           infra/environments/dev/terraform.tfstate
           infra/environments/dev/.terraform/
+          infra/environments/dev/tfplan
+        retention-days: 90
+
+  test-e2e:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: deploy
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+    
+    - name: Install E2E Test Dependencies
+      working-directory: tests/e2e
+      run: |
+        pip install -r requirements.txt
+    
+    - name: Run End-to-End Tests
+      working-directory: tests/e2e
+      run: |
+        echo "🔄 Running end-to-end tests..."
+        chmod +x run_e2e_test.sh
+        ./run_e2e_test.sh --cleanup
+    
+    - name: Upload E2E Test Results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: e2e-test-results
+        path: tests/e2e/
         retention-days: 30
+
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [test, build, deploy, test-e2e]
+    if: always()
     
-    - name: Notify on success
-      if: success()
+    steps:
+    - name: Create Deployment Summary
       run: |
-        echo "✅ Video Pipeline deployment completed successfully!"
-        echo "🚀 All modules deployed and tested"
-        echo "📊 End-to-end tests passed"
+        cat >> $GITHUB_STEP_SUMMARY << 'EOF'
+        # 🚀 Video Pipeline Deployment Summary
+        
+        ## Results
+        - **Tests**: ${{ needs.test.result }}
+        - **Build**: ${{ needs.build.result }}  
+        - **Deploy**: ${{ needs.deploy.result }}
+        - **E2E Tests**: ${{ needs.test-e2e.result }}
+        
+        ## Modules Tested
+        - ✅ Transcribe Module
+        - ✅ Chunking Module  
+        - ✅ Embedding Module
+        - ✅ Question Module
+        
+        ## Infrastructure Deployed
+        - 🪣 S3 Buckets (media, transcription, access-list, cloudtrail)
+        - 🔄 Lambda Functions (4 microservices + layers)
+        - 🌊 Step Functions Workflow
+        - 📡 EventBridge Rules
+        - 🔑 Secrets Manager
+        - 🔐 KMS Keys
+        - 📊 CloudWatch Logs
+        - 🌐 API Gateway
+        
+        EOF
     
-    - name: Notify on failure
-      if: failure()
+    - name: Notify on Complete Success
+      if: needs.test.result == 'success' && needs.build.result == 'success' && needs.deploy.result == 'success' && needs.test-e2e.result == 'success'
       run: |
-        echo "❌ Video Pipeline deployment failed!"
-        echo "Please check the logs above for details"
+        echo "🎉 Complete pipeline success! All components deployed and tested."
+    
+    - name: Notify on Partial Failure
+      if: contains(needs.*.result, 'failure')
+      run: |
+        echo "⚠️ Pipeline completed with some failures. Check individual job results above."
         exit 1 
