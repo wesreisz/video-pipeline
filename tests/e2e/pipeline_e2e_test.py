@@ -651,9 +651,11 @@ def test_question_api(test_id: str, timeout: int = 60) -> bool:
         print_error("Failed to get AWS API endpoint from Terraform outputs")
         return False
 
-    # Test data
+    # Test data - read email from environment variable with fallback
     test_question = "What is the main topic discussed?"
-    test_email = "test@example.com"
+    test_email = os.environ.get('TEST_EMAIL', 'test@example.com')
+    print_info(f"Using test email: {test_email}")
+    
     headers = {
         'Content-Type': 'application/json',
         'x-api-key': api_key

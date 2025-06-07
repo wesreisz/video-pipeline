@@ -33,11 +33,15 @@ def test_handler_with_mock_event():
     try:
         from handlers.question_handler import lambda_handler
         
+        # Get test email from environment variable with fallback
+        test_email = os.environ.get('TEST_EMAIL', 'test@example.com')
+        print(f"Using test email: {test_email}")
+        
         # Mock event that matches the API Gateway format
         mock_event = {
             'body': json.dumps({
                 'question': 'What is the main topic discussed?',
-                'email': 'test@example.com'
+                'email': test_email
             }),
             'headers': {
                 'x-api-key': 'test-api-key',
