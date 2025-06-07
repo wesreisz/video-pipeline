@@ -14,8 +14,8 @@ env:
   TF_VAR_openai_api_key: ${{ secrets.OPENAI_API_KEY }}
   TF_VAR_pinecone_api_key: ${{ secrets.PINECONE_API_KEY }}
   TF_VAR_certificate_domain: ${{ secrets.CERTIFICATE_DOMAIN || 'icaet-dev.wesleyreisz.com' }}
-  # Test email from GitHub variable with fallback
-  TEST_EMAIL: ${{ vars.TEST_EMAIL || 'test@example.com' }}
+  # Test email moved to secrets for security
+  TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
 
 jobs:
   test:
